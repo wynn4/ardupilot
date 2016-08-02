@@ -17,6 +17,7 @@ void Copter::gcs_send_stateinfo(void)
         if (gcs[i].initialised) {
             gcs[i].attitude_send();
             gcs[i].position_send();
+            gcs[i].raw_imu_send();
         }
     }
 }
@@ -603,7 +604,7 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
 
     case MSG_RAW_IMU1:
         CHECK_PAYLOAD_SIZE(RAW_IMU);
-        send_raw_imu(copter.ins, copter.compass);
+        send_raw_imu(copter.ins, copter.compass, copter.ahrs);
         break;
 
     case MSG_RAW_IMU2:
@@ -868,6 +869,13 @@ GCS_MAVLINK_Copter::position_send(void)
 }
 
 void
+GCS_MAVLINK_Copter::raw_imu_send(void)
+{
+    if(comm_get_txspace(chan) > 200)
+        send_raw_imu(copter.ins, copter.compass, copter.ahrs);
+}
+
+void
 GCS_MAVLINK_Copter::data_stream_send(void)
 {
     if (waypoint_receiving) {
@@ -900,7 +908,7 @@ GCS_MAVLINK_Copter::data_stream_send(void)
     }
 
     if (stream_trigger(STREAM_RAW_SENSORS)) {
-        send_message(MSG_RAW_IMU1);
+        //send_message(MSG_RAW_IMU1);
         send_message(MSG_RAW_IMU2);
         send_message(MSG_RAW_IMU3);
     }
@@ -1726,18 +1734,9 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
             break;
         }
 
-        // convert thrust to climb rate
-        packet.thrust = constrain_float(packet.thrust, 0.0f, 1.0f);
-        float climb_rate_cms = 0.0f;
-        if (is_equal(packet.thrust, 0.5f)) {
-            climb_rate_cms = 0.0f;
-        } else if (packet.thrust > 0.5f) {
-            // climb at up to WPNAV_SPEED_UP
-            climb_rate_cms = (packet.thrust - 0.5f) * 2.0f * copter.wp_nav.get_speed_up();
-        } else {
-            // descend at up to WPNAV_SPEED_DN
-            climb_rate_cms = (0.5f - packet.thrust) * 2.0f * -fabsf(copter.wp_nav.get_speed_down());
-        }
+        // Take thrust in as a climb rate in m/s
+        float climb_rate_cms = constrain_float(packet.thrust * 1.e2, -fabsf(copter.wp_nav.get_speed_down()),
+            copter.wp_nav.get_speed_up());
 
         // if the body_yaw_rate field is ignored, use the commanded yaw position
         // otherwise use the commanded yaw rate
