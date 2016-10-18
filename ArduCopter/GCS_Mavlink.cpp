@@ -860,7 +860,7 @@ GCS_MAVLINK_Copter::state_send(void)
         if(_ahrs.get_NavEKF2().activeCores() > 0) {
             Vector3f accel;
             _ahrs.get_NavEKF2().getAccelNEDCurrent(accel);
-/*
+
             mavlink_msg_state_info_send(
                     chan,
                     AP_HAL::micros(),
@@ -869,7 +869,7 @@ GCS_MAVLINK_Copter::state_send(void)
                     copter.ahrs.yaw,
                     accel.x * 1000.0f,
                     accel.y * 1000.0f,
-                    accel.z * 1000.0f);*/
+                    accel.z * 1000.0f);
         }
     }
 }
