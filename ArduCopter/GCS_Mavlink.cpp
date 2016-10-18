@@ -15,9 +15,7 @@ void Copter::gcs_send_stateinfo(void)
 {
     for (uint8_t i=0; i<num_gcs; i++) {
         if (gcs[i].initialised) {
-            gcs[i].attitude_send();
-            gcs[i].position_send();
-            gcs[i].raw_imu_send();
+            gcs[i].state_send();
         }
     }
 }
@@ -604,7 +602,7 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
 
     case MSG_RAW_IMU1:
         CHECK_PAYLOAD_SIZE(RAW_IMU);
-        send_raw_imu(copter.ins, copter.compass, copter.ahrs);
+        send_raw_imu(copter.ins, copter.compass);
         break;
 
     case MSG_RAW_IMU2:
@@ -855,24 +853,25 @@ AP_GROUPEND
 };
 
 void
-GCS_MAVLINK_Copter::attitude_send(void)
+GCS_MAVLINK_Copter::state_send(void)
 {
-    if(comm_get_txspace(chan) > 200)
-        copter.send_attitude(chan);
-}
-
-void
-GCS_MAVLINK_Copter::position_send(void)
-{
-    if(comm_get_txspace(chan) > 200)
-        copter.send_location(chan);
-}
-
-void
-GCS_MAVLINK_Copter::raw_imu_send(void)
-{
-    if(comm_get_txspace(chan) > 200)
-        send_raw_imu(copter.ins, copter.compass, copter.ahrs);
+    if(comm_get_txspace(chan) > 200){
+        AP_AHRS_NavEKF &_ahrs = reinterpret_cast<AP_AHRS_NavEKF&>(copter.ahrs);
+        if(_ahrs.get_NavEKF2().activeCores() > 0) {
+            Vector3f accel;
+            _ahrs.get_NavEKF2().getAccelNEDCurrent(accel);
+/*
+            mavlink_msg_state_info_send(
+                    chan,
+                    AP_HAL::micros(),
+                    copter.ahrs.roll,
+                    copter.ahrs.pitch,
+                    copter.ahrs.yaw,
+                    accel.x * 1000.0f,
+                    accel.y * 1000.0f,
+                    accel.z * 1000.0f);*/
+        }
+    }
 }
 
 void
@@ -908,7 +907,7 @@ GCS_MAVLINK_Copter::data_stream_send(void)
     }
 
     if (stream_trigger(STREAM_RAW_SENSORS)) {
-        //send_message(MSG_RAW_IMU1);
+        send_message(MSG_RAW_IMU1);
         send_message(MSG_RAW_IMU2);
         send_message(MSG_RAW_IMU3);
     }
@@ -927,7 +926,7 @@ GCS_MAVLINK_Copter::data_stream_send(void)
     if (copter.gcs_out_of_time) return;
 
     if (stream_trigger(STREAM_POSITION)) {
-        //send_message(MSG_LOCATION);
+        send_message(MSG_LOCATION);
         send_message(MSG_LOCAL_POSITION);
     }
 
@@ -947,7 +946,7 @@ GCS_MAVLINK_Copter::data_stream_send(void)
     if (copter.gcs_out_of_time) return;
 
     if (stream_trigger(STREAM_EXTRA1)) {
-        //send_message(MSG_ATTITUDE);
+        send_message(MSG_ATTITUDE);
         send_message(MSG_SIMSTATE);
         send_message(MSG_PID_TUNING);
     }
