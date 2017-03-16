@@ -1302,7 +1302,7 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
             break;
 
         case MAV_CMD_DO_SET_HOME:
-            // param1 : use current (1=use current location, 0=use specified location)
+            // param1 : use current (2=use specified location horizontally only, 1=use current location, 0=use specified location)
             // param5 : latitude
             // param6 : longitude
             // param7 : altitude (absolute)
@@ -1310,6 +1310,19 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
             if(is_equal(packet.param1,1.0f) || (is_zero(packet.param5) && is_zero(packet.param6) && is_zero(packet.param7))) {
                 if (copter.set_home_to_current_location_and_lock()) {
                     result = MAV_RESULT_ACCEPTED;
+                }
+            } else if (is_equal(packet.param1,2.0f)){
+                // sanity check location
+                if (!check_latlng(packet.param5, packet.param6)) {
+                    break;
+                }
+                Location new_home_loc;
+                new_home_loc.lat = (int32_t)(packet.param5 * 1.0e7f);
+                new_home_loc.lng = (int32_t)(packet.param6 * 1.0e7f);
+                if (!copter.far_from_EKF_origin(new_home_loc)) {
+                    if (copter.set_home_2D_and_lock(new_home_loc)) {
+                        result = MAV_RESULT_ACCEPTED;
+                    }
                 }
             } else {
                 // sanity check location
