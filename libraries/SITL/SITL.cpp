@@ -110,7 +110,30 @@ void SITL::simstate_send(mavlink_channel_t chan)
                               radians(state.yawRate),
                               state.latitude*1.0e7,
                               state.longitude*1.0e7);
-}
+
+    mavlink_msg_sim_state_send(chan,
+                               0.0f,
+                               0.0f,
+                               0.0f,
+                               0.0f,
+                               ToRad(state.rollDeg),
+                               ToRad(state.pitchDeg),
+                               ToRad(yaw),
+                               state.xAccel,
+                               state.yAccel,
+                               state.zAccel,
+                               ToRad(state.rollRate),
+                               ToRad(state.pitchRate),
+                               ToRad(state.yawRate),
+                               state.latitude,
+                               state.longitude,
+                               state.altitude,
+                               0,
+                               0,
+                               state.speedN,
+                               state.speedE,
+                               state.speedD);
+  }
 
 /* report SITL state to DataFlash */
 void SITL::Log_Write_SIMSTATE(DataFlash_Class *DataFlash)
