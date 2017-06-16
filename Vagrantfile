@@ -13,10 +13,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # out to the containing OS
   # config.vm.network "forwarded_port", guest: 14550, host: 14550, protocol: "udp"
 
-  # Create a private network, which allows host-only access to the machine
-  # using a DHCP allocated IP.
-  config.vm.network "private_network", type: "dhcp"
-
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
   # Example for VirtualBox:
