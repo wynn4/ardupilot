@@ -23,22 +23,39 @@
 
 using namespace SITL;
 
+extern const AP_HAL::HAL& hal;
+
 MultiCopter::MultiCopter(const char *home_str, const char *frame_str) :
     Aircraft(home_str, frame_str),
-    frame(NULL)
+    frame(NULL),
+    /*
+     * Simu Planck
+     */
+    _sock(true)
 {
+
     frame = Frame::find_frame(frame_str);
     if (frame == NULL) {
         printf("Frame '%s' not found", frame_str);
         exit(1);
     }
-    if (strstr(frame_str, "-fast")) {
-        frame->init(1.5, 0.5, 85, 4*radians(360));
-    } else {
-        frame->init(1.5, 0.51, 15, 4*radians(360));
-    }
+
+    frame->init(1.5, 0.5, 85, 4*radians(360));
+    // if (strstr(frame_str, "-fast")) {
+    //     frame->init(1.5, 0.5, 85, 4*radians(360));
+    // } else {
+    //     frame->init(1.5, 0.51, 15, 4*radians(360));
+    // }
     frame_height = 0.1;
     ground_behavior = GROUND_BEHAVIOR_NO_MOVEMENT;
+
+    /*
+     * Simu Planck
+     */
+    _sock.bind("0.0.0.0", 14561);
+    _sock.reuseaddress();
+    _sock.set_blocking(false);
+
 }
 
 // calculate rotational and linear accelerations
@@ -46,12 +63,14 @@ void MultiCopter::calculate_forces(const struct sitl_input &input, Vector3f &rot
 {
     frame->calculate_forces(*this, input, rot_accel, body_accel);
 }
-    
+
 /*
   update the multicopter simulation by one time step
  */
 void MultiCopter::update(const struct sitl_input &input)
 {
+    //hal.console->printf("MultiCopter::update: %lu \n", (unsigned) AP_HAL::millis());
+
     // get wind vector setup
     update_wind(input);
 
@@ -66,6 +85,61 @@ void MultiCopter::update(const struct sitl_input &input)
 
     // update magnetic field
     update_mag_field_bf();
+
+    update_planck();
+}
+
+
+/*
+ * Simu Planck
+ */
+void MultiCopter::update_planck()
+{
+
+    // Create simulation packet
+    simu_planck_t pkt;
+    pkt.time_simu_us = time_now_us;
+    pkt.latitude = location.lat * 1.0e-7;
+    pkt.longitude = location.lng * 1.0e-7;
+    pkt.altitude = ((double)location.alt) * 1.0e-2;
+    pkt.pos_n = position.x;
+    pkt.pos_e = position.y;
+    pkt.pos_d = position.z;
+    float r, p, y;
+    dcm.to_euler(&r, &p, &y);
+    pkt.roll = r;
+    pkt.pitch = p;
+    pkt.yaw = y;
+
+    //Send simulation packet
+    _sock.sendto(&pkt, sizeof(pkt), "172.28.128.5", 14560);
+
+    //Check if there is a ack coming back:
+    simu_planck_t pkt_recv;
+    if(_sock.recv(&pkt_recv, sizeof(pkt_recv), 0) == sizeof(pkt_recv)){
+
+      //If there is a ack: Enable the time locking mechanism
+      if(!_planck_lock){
+        hal.console->printf("Planck: Start time lock\n");
+        _planck_lock = true;
+      }
+    }
+    //If no ack yet, but time locking mechanism enabled, resend packet and wait for ack
+    else if(_planck_lock){
+      int count = 0;
+      //Resend packet every 0.1 sec if no answer
+      while (_sock.recv(&pkt_recv, sizeof(pkt_recv), 100) != sizeof(pkt_recv) && count < 5) {
+        _sock.sendto(&pkt, sizeof(pkt), "172.28.128.5", 14560);
+        count +=1;
+      }
+
+      if(count == 5){
+        hal.console->printf("Planck: Stop time lock\n");
+        _planck_lock = false;
+      }
+    }
+
+
 }
 
 

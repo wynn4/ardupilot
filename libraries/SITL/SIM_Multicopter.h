@@ -22,6 +22,9 @@
 #include "SIM_Motor.h"
 #include "SIM_Frame.h"
 
+#include <AP_HAL/utility/Socket.h>
+
+
 namespace SITL {
 
 /*
@@ -39,10 +42,36 @@ public:
         return new MultiCopter(home_str, frame_str);
     }
 
+    void update_planck();
+
+
 protected:
     // calculate rotational and linear accelerations
     void calculate_forces(const struct sitl_input &input, Vector3f &rot_accel, Vector3f &body_accel);
     Frame *frame;
+
+
+private:
+    /*
+     * Simu Planck
+     */
+    struct simu_planck_t {
+      uint64_t time_simu_us;
+      double latitude;
+      double longitude;
+      double altitude;
+      double pos_n;
+      double pos_e;
+      double pos_d;
+      double roll;
+      double pitch;
+      double yaw;
+    };
+//    simu_planck_t _simu_planck;
+
+    SocketAPM _sock;
+    bool _planck_lock = false;
+
 };
 
 }
