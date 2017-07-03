@@ -40,12 +40,11 @@ MultiCopter::MultiCopter(const char *home_str, const char *frame_str) :
         exit(1);
     }
 
-    frame->init(1.5, 0.5, 85, 4*radians(360));
-    // if (strstr(frame_str, "-fast")) {
-    //     frame->init(1.5, 0.5, 85, 4*radians(360));
-    // } else {
-    //     frame->init(1.5, 0.51, 15, 4*radians(360));
-    // }
+    if (strstr(frame_str, "-fast")) {
+        frame->init(1.5, 0.5, 85, 4*radians(360));
+    } else {
+        frame->init(1.5, 0.51, 15, 4*radians(360));
+    }
     frame_height = 0.1;
     ground_behavior = GROUND_BEHAVIOR_NO_MOVEMENT;
 
@@ -116,29 +115,48 @@ void MultiCopter::update_planck()
 
     //Check if there is a ack coming back:
     simu_planck_t pkt_recv;
-    if(_sock.recv(&pkt_recv, sizeof(pkt_recv), 0) == sizeof(pkt_recv)){
 
-      //If there is a ack: Enable the time locking mechanism
-      if(!_planck_lock){
+    if(!_planck_lock){
+      if(_sock.recv(&pkt_recv, sizeof(pkt_recv), 0) == sizeof(pkt_recv)){
+
+        //If there is a ack: Enable the time locking mechanism
         hal.console->printf("Planck: Start time lock\n");
+        printf("Planck: Start time lock\n");
         _planck_lock = true;
       }
     }
-    //If no ack yet, but time locking mechanism enabled, resend packet and wait for ack
-    else if(_planck_lock){
-      int count = 0;
-      //Resend packet every 0.1 sec if no answer
-      while (_sock.recv(&pkt_recv, sizeof(pkt_recv), 100) != sizeof(pkt_recv) && count < 5) {
-        _sock.sendto(&pkt, sizeof(pkt), "172.28.128.5", 14560);
-        count +=1;
-      }
 
-      if(count == 5){
-        hal.console->printf("Planck: Stop time lock\n");
-        _planck_lock = false;
+    //If no ack yet, but time locking mechanism enabled, resend packet and wait for ack
+    else {
+
+      //Receive ack msg with planck_ctrl clock time until Ardupilot time and Planck_ctrl time matches
+      bool planck_in_sync = false;
+      while(!planck_in_sync && _planck_lock){
+
+        //Receive planck ctrl ack
+        if(_sock.recv(&pkt_recv, sizeof(pkt_recv), 1000) == sizeof(pkt_recv)){
+
+          //If not sync: wait for an other ack msg
+          if(pkt_recv.time_simu_us != pkt.time_simu_us){
+            printf("Planck: Out of sync %9.4f ms ", ((double)pkt.time_simu_us - pkt_recv.time_simu_us)/1e3);
+            printf("AP: %u us ", (unsigned) pkt.time_simu_us);
+            printf("PL: %u us \n", (unsigned) pkt_recv.time_simu_us);
+          }
+          //In sync: move forward with the simulation
+          else{
+            //printf("Planck: In of sync %9.9f ms \n", ((double)pkt.time_simu_us - pkt_recv.time_simu_us)/1e3);
+            planck_in_sync = true;
+          }
+        }
+
+        //Timeout on planck ctrl ack: Turn off the time lock mechanism
+        else{
+          hal.console->printf("Planck: Stop time lock\n");
+          printf("Planck: Stop time lock\n");
+          _planck_lock = false;
+        }
       }
     }
-
 
 }
 
