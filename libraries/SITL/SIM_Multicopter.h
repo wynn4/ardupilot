@@ -71,6 +71,7 @@ private:
 
     SocketAPM _sock;
     bool _planck_lock = false;
+    int _count_timout = 0;
 
 };
 

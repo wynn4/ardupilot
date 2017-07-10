@@ -134,8 +134,8 @@ void MultiCopter::update_planck()
       while(!planck_in_sync && _planck_lock){
 
         //Receive planck ctrl ack
-        if(_sock.recv(&pkt_recv, sizeof(pkt_recv), 1000) == sizeof(pkt_recv)){
-
+        if(_sock.recv(&pkt_recv, sizeof(pkt_recv), 25) == sizeof(pkt_recv)){
+          _count_timout = 0;
           //If not sync: wait for an other ack msg
           if(pkt_recv.time_simu_us != pkt.time_simu_us){
             printf("Planck: Out of sync %9.4f ms ", ((double)pkt.time_simu_us - pkt_recv.time_simu_us)/1e3);
@@ -148,9 +148,13 @@ void MultiCopter::update_planck()
             planck_in_sync = true;
           }
         }
+        else{
+          _count_timout += 1;
+          printf("Planck: Sync no response count: %i \n", _count_timout);
+        }
 
         //Timeout on planck ctrl ack: Turn off the time lock mechanism
-        else{
+        if(_count_timout >= 80){
           hal.console->printf("Planck: Stop time lock\n");
           printf("Planck: Stop time lock\n");
           _planck_lock = false;
