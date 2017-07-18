@@ -51,7 +51,7 @@ MultiCopter::MultiCopter(const char *home_str, const char *frame_str) :
     /*
      * Simu Planck
      */
-    _sock.bind("0.0.0.0", 14561);
+    _sock.bind("0.0.0.0", planck_recv_port);
     _sock.reuseaddress();
     _sock.set_blocking(false);
 
@@ -111,11 +111,10 @@ void MultiCopter::update_planck()
     pkt.yaw = y;
 
     //Send simulation packet
-    _sock.sendto(&pkt, sizeof(pkt), "172.28.128.5", 14560);
+    _sock.sendto(&pkt, sizeof(pkt), planck_simu_ip, planck_send_port);
 
     //Check if there is a ack coming back:
     simu_planck_t pkt_recv;
-
     if(!_planck_lock){
       if(_sock.recv(&pkt_recv, sizeof(pkt_recv), 0) == sizeof(pkt_recv)){
 
@@ -126,16 +125,40 @@ void MultiCopter::update_planck()
       }
     }
 
-    //If no ack yet, but time locking mechanism enabled, resend packet and wait for ack
+    //If Planck is out of sync: Still listen with low timeout
+    else if(_planck_out_sync){
+
+      //Receive planck ctrl ack: Enable the in sync mode
+      if(_sock.recv(&pkt_recv, sizeof(pkt_recv), 10) == sizeof(pkt_recv)){
+        printf("Planck: Out of Sync but response %i \n", _count_timout);
+        _count_timout = 0;
+        _planck_out_sync = false;
+
+      }
+      else{
+        _count_timout +=1;
+        printf("Planck: Sync no response count: %i \n", _count_timout);
+      }
+
+      //If no answer of a long time: Disable Planck time lock
+      if(_count_timout >= 200){
+        hal.console->printf("Planck: Stop time lock\n");
+        printf("Planck: Stop time lock\n");
+        _planck_out_sync = false;
+        _planck_lock = false;
+      }
+
+    }
+
+    //In sync mode:
     else {
 
       //Receive ack msg with planck_ctrl clock time until Ardupilot time and Planck_ctrl time matches
       bool planck_in_sync = false;
-      while(!planck_in_sync && _planck_lock){
+      while(!planck_in_sync && _planck_lock && !_planck_out_sync){
 
         //Receive planck ctrl ack
-        if(_sock.recv(&pkt_recv, sizeof(pkt_recv), 25) == sizeof(pkt_recv)){
-          _count_timout = 0;
+        if(_sock.recv(&pkt_recv, sizeof(pkt_recv), 200) == sizeof(pkt_recv)){
           //If not sync: wait for an other ack msg
           if(pkt_recv.time_simu_us != pkt.time_simu_us){
             printf("Planck: Out of sync %9.4f ms ", ((double)pkt.time_simu_us - pkt_recv.time_simu_us)/1e3);
@@ -148,20 +171,15 @@ void MultiCopter::update_planck()
             planck_in_sync = true;
           }
         }
-        else{
-          _count_timout += 1;
-          printf("Planck: Sync no response count: %i \n", _count_timout);
-        }
 
-        //Timeout on planck ctrl ack: Turn off the time lock mechanism
-        if(_count_timout >= 80){
-          hal.console->printf("Planck: Stop time lock\n");
-          printf("Planck: Stop time lock\n");
-          _planck_lock = false;
+        //If no answer from Planck for timeout (200ms), move to planck out of sync mode
+        else{
+          _count_timout = 0;
+          _planck_out_sync = true;
+          printf("Planck: Sync no response \n");
         }
       }
     }
-
 }
 
 

@@ -69,9 +69,14 @@ private:
     };
 //    simu_planck_t _simu_planck;
 
+    const char *planck_simu_ip = "0.0.0.0";
+    const uint16_t planck_send_port = 14560;
+    const uint16_t planck_recv_port = 14561;
+
     SocketAPM _sock;
     bool _planck_lock = false;
     int _count_timout = 0;
+    bool _planck_out_sync = false;
 
 };
 
