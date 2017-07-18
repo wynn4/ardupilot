@@ -35,11 +35,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # However shared folders are quite slow. If you have rsync installed then this is a faster way of building.
   # In addition there are problems with px4-clean when using shared folders. Using rsync avoids this.
   # config.vm.synced_folder ".", "/vagrant", type: "rsync", rsync__auto: true
-
-  # Create a private network, which allows host-only access to the machine
-  # using a DHCP allocated IP.
-  config.vm.network "private_network", type: "dhcp"
-
+  
   # If you are on windows then you must use a version of git >= 1.8.x to update the submodules
   # in order to build. Older versions of git use absolute paths for submodules which confuses things.
 
