@@ -89,6 +89,7 @@ public:
     void        setup_uart(const AP_SerialManager& serial_manager, AP_SerialManager::SerialProtocol protocol, uint8_t instance);
     void        send_message(enum ap_message id);
     void        send_text(MAV_SEVERITY severity, const char *str);
+    virtual void        state_send(void) = 0;
     virtual void        data_stream_send(void) = 0;
     void        queued_param_send();
     void        queued_waypoint_send();
@@ -212,6 +213,8 @@ public:
     bool telemetry_delayed(mavlink_channel_t chan);
     virtual uint32_t telem_delay() const = 0;
 
+    bool should_send_stateinfo(void) { return streamStateInfo; };
+
 protected:
 
     // overridable method to check for packet acceptance. Allows for
@@ -232,6 +235,8 @@ protected:
 
     // saveable rate of each stream
     AP_Int16        streamRates[NUM_STREAMS];
+
+    AP_Int8 streamStateInfo; //If the stateinfo message should be streamed at 50hz
 
     void handle_request_data_stream(mavlink_message_t *msg, bool save);
     FUNCTOR_TYPEDEF(set_mode_fn, bool, uint8_t);
