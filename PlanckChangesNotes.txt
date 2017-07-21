@@ -1,0 +1,17 @@
+Planck Aerosystems changes notes:
+---------------------------------
+
+# Please keep this notes up-to-date to keep track of the changes
+# made to Ardupilot.
+
+1) Sending PlanckAerosystems specific drone state informations at high rate (100Hz)
+
+2) Compute downsampled and low-pass filtered acceleration in Vehicle NED to send to companion computer
+
+3) Take thrust as a climb_rate in SET_ATTITUDE_TARGET mavlink msg
+
+4) Run the altitude controller using altitude surface tracking (based on RangeFinder information) in Copter::guided_angle_control_run()
+
+5) Disable RangeFinder tilt compensation as RangeFinder information comes from tag detection and is already in Vehicle-NED frame
+
+6) Allow for setting only 2D lat/lon coordinates as when setting home position (keep the previous home position altitude) using corresponding flag MAV_CMD_DO_SET_HOME

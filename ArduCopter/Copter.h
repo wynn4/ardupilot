@@ -681,6 +681,7 @@ private:
     void auto_takeoff_attitude_run(float target_yaw_rate);
     void set_accel_throttle_I_from_pilot_throttle();
     void rotate_body_frame_to_NE(float &x, float &y);
+    void gcs_send_stateinfo(void);
     void gcs_send_heartbeat(void);
     void gcs_send_deferred(void);
     void send_heartbeat(mavlink_channel_t chan);
@@ -757,6 +758,7 @@ private:
     bool set_home_to_current_location();
     bool set_home_to_current_location_and_lock();
     bool set_home_and_lock(const Location& loc);
+    bool set_home_2D_and_lock(const Location& loc);
     bool set_home(const Location& loc);
     bool far_from_EKF_origin(const Location& loc);
     void set_system_time_from_GPS();

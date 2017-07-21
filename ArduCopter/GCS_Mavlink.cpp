@@ -8,6 +8,15 @@ void Copter::gcs_send_heartbeat(void)
     gcs_send_message(MSG_HEARTBEAT);
 }
 
+void Copter::gcs_send_stateinfo(void)
+{
+    for (uint8_t i=0; i<num_gcs; i++) {
+        if (gcs[i].initialised) {
+            gcs[i].state_send();
+        }
+    }
+}
+
 void Copter::gcs_send_deferred(void)
 {
     gcs_send_message(MSG_RETRY_DEFERRED);
@@ -699,6 +708,28 @@ AP_GROUPEND
 };
 
 void
+GCS_MAVLINK_Copter::state_send(void)
+{
+    if(comm_get_txspace(chan) > 200){
+        AP_AHRS_NavEKF &_ahrs = reinterpret_cast<AP_AHRS_NavEKF&>(copter.ahrs);
+        if(_ahrs.get_NavEKF2().activeCores() > 0) {
+            Vector3f accel;
+            _ahrs.get_NavEKF2().getAccelNEDCurrent(accel);
+
+            mavlink_msg_state_info_send(
+                    chan,
+                    AP_HAL::micros(),
+                    copter.ahrs.roll,
+                    copter.ahrs.pitch,
+                    copter.ahrs.yaw,
+                    accel.x * 1000.0f,
+                    accel.y * 1000.0f,
+                    accel.z * 1000.0f);
+        }
+    }
+}
+
+void
 GCS_MAVLINK_Copter::data_stream_send(void)
 {
     if (waypoint_receiving) {
@@ -1149,7 +1180,7 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
             break;
 
         case MAV_CMD_DO_SET_HOME:
-            // param1 : use current (1=use current location, 0=use specified location)
+            // param1 : use current (2=use specified location horizontally only, 1=use current location, 0=use specified location)
             // param5 : latitude
             // param6 : longitude
             // param7 : altitude (absolute)
@@ -1157,6 +1188,19 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
             if(is_equal(packet.param1,1.0f) || (is_zero(packet.param5) && is_zero(packet.param6) && is_zero(packet.param7))) {
                 if (copter.set_home_to_current_location_and_lock()) {
                     result = MAV_RESULT_ACCEPTED;
+                }
+            } else if (is_equal(packet.param1,2.0f)){
+                // sanity check location
+                if (!check_latlng(packet.param5, packet.param6)) {
+                    break;
+                }
+                Location new_home_loc;
+                new_home_loc.lat = (int32_t)(packet.param5 * 1.0e7f);
+                new_home_loc.lng = (int32_t)(packet.param6 * 1.0e7f);
+                if (!copter.far_from_EKF_origin(new_home_loc)) {
+                    if (copter.set_home_2D_and_lock(new_home_loc)) {
+                        result = MAV_RESULT_ACCEPTED;
+                    }
                 }
             } else {
                 // sanity check location
@@ -1586,18 +1630,9 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
             break;
         }
 
-        // convert thrust to climb rate
-        packet.thrust = constrain_float(packet.thrust, 0.0f, 1.0f);
-        float climb_rate_cms = 0.0f;
-        if (is_equal(packet.thrust, 0.5f)) {
-            climb_rate_cms = 0.0f;
-        } else if (packet.thrust > 0.5f) {
-            // climb at up to WPNAV_SPEED_UP
-            climb_rate_cms = (packet.thrust - 0.5f) * 2.0f * copter.wp_nav->get_speed_up();
-        } else {
-            // descend at up to WPNAV_SPEED_DN
-            climb_rate_cms = (0.5f - packet.thrust) * 2.0f * -fabsf(copter.wp_nav->get_speed_down());
-        }
+        // Take thrust in as a climb rate in m/s
+        float climb_rate_cms = constrain_float(packet.thrust * 1.e2, -fabsf(copter.wp_nav.get_speed_down()),
+            copter.wp_nav.get_speed_up());
 
         // if the body_yaw_rate field is ignored, use the commanded yaw position
         // otherwise use the commanded yaw rate
