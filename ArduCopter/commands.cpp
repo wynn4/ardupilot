@@ -66,6 +66,22 @@ bool Copter::set_home_and_lock(const Location& loc)
     return false;
 }
 
+// set_home_2D_and_lock - sets ahrs home (used for RTL) to specified GPS location (horizontally) but does not change the home alt (vertically) and locks so it cannot be moved
+//  unless this function is called again
+bool Copter::set_home_2D_and_lock(const Location& loc)
+{
+    // Create location from current home alt and specified GPS horizontal location
+    Location temp_loc;
+    temp_loc = loc;
+    temp_loc.alt = ahrs.get_home().alt;
+
+    if (set_home(temp_loc)) {
+        set_home_state(HOME_SET_AND_LOCKED);
+        return true;
+    }
+    return false;
+}
+
 // set_home - sets ahrs home (used for RTL) to specified location
 //  initialises inertial nav and compass on first call
 //  returns true if home location set successfully

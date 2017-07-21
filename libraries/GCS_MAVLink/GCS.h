@@ -93,6 +93,7 @@ public:
     void        setup_uart(const AP_SerialManager& serial_manager, AP_SerialManager::SerialProtocol protocol, uint8_t instance);
     void        send_message(enum ap_message id);
     void        send_text(MAV_SEVERITY severity, const char *str);
+    virtual void        state_send(void) = 0;
     virtual void        data_stream_send(void) = 0;
     void        queued_param_send();
     void        queued_waypoint_send();
