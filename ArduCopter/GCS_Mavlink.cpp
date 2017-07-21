@@ -11,8 +11,8 @@ void Copter::gcs_send_heartbeat(void)
 void Copter::gcs_send_stateinfo(void)
 {
     for (uint8_t i=0; i<num_gcs; i++) {
-        if (gcs[i].initialised) {
-            gcs[i].state_send();
+        if (gcs_chan[i].initialised) {
+            gcs_chan[i].state_send();
         }
     }
 }
@@ -1631,8 +1631,8 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
         }
 
         // Take thrust in as a climb rate in m/s
-        float climb_rate_cms = constrain_float(packet.thrust * 1.e2, -fabsf(copter.wp_nav.get_speed_down()),
-            copter.wp_nav.get_speed_up());
+        float climb_rate_cms = constrain_float(packet.thrust * 1.e2, -fabsf(copter.wp_nav->get_speed_down()),
+            copter.wp_nav->get_speed_up());
 
         // if the body_yaw_rate field is ignored, use the commanded yaw position
         // otherwise use the commanded yaw rate

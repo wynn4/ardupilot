@@ -623,7 +623,7 @@ void Copter::guided_angle_control_run()
     // call throttle controller
     if (rangefinder_alt_ok()) {
         // if sonar is ok, use surface tracking
-        climb_rate_cms = get_surface_tracking_climb_rate(climb_rate_cms, pos_control.get_alt_target(), G_Dt);
+        climb_rate_cms = get_surface_tracking_climb_rate(climb_rate_cms, pos_control->get_alt_target(), G_Dt);
     }
 
     // call position controller
