@@ -56,16 +56,17 @@ private:
      * Simu Planck
      */
     struct simu_planck_t {
-      uint64_t time_simu_us;
-      double latitude;
-      double longitude;
-      double altitude;
-      double pos_n;
-      double pos_e;
-      double pos_d;
-      double roll;
-      double pitch;
-      double yaw;
+      uint64_t time_simu_us;                                // Time is us of the simulation clock - defined by Ardupilot
+      double origin_lat;                                    // Lat - Origin of the Local NED frame used by the simulation back end
+      double origin_lon;                                    // Lon - Origin of the Local NED frame used by the simulation back end
+      double origin_alt_amsl;                               // Alt (amsl) - Origin of the Local NED frame used by the simulation back end
+      double alt_amsl;                                      // Alt (amsl) of the aircraft
+      double pos_n;                                         // X Position of the aircraft - In Local NED frame defined just above
+      double pos_e;                                         // Y Position of the aircraft - In Local NED frame defined just above
+      double pos_d;                                         // Z Position of the aircraft - In Local NED frame defined just above
+      double roll;                                          // Roll (rad) - Attitude of the Aircraft
+      double pitch;                                         // Pitch (rad) - Attitude of the Aircraft
+      double yaw;                                           // Yaw (rad) - Attitude of the Aircraft
     };
 //    simu_planck_t _simu_planck;
 

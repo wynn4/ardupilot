@@ -97,18 +97,19 @@ void MultiCopter::update_planck()
 
     // Create simulation packet
     simu_planck_t pkt;
-    pkt.time_simu_us = time_now_us;
-    pkt.latitude = location.lat * 1.0e-7;
-    pkt.longitude = location.lng * 1.0e-7;
-    pkt.altitude = ((double)location.alt) * 1.0e-2;
-    pkt.pos_n = position.x;
-    pkt.pos_e = position.y;
-    pkt.pos_d = position.z;
+    pkt.time_simu_us = time_now_us;                         // Time is us of the simulation clock - defined by Ardupilot
+    pkt.origin_lat = home.lat * 1.0e-7;                     // Lat - Origin of the Local NED frame used by the simulation back end (SIM_Aircraft.cpp)
+    pkt.origin_lon = home.lng * 1.0e-7;                     // Lon - Origin of the Local NED frame used by the simulation back end (SIM_Aircraft.cpp)
+    pkt.origin_alt_amsl = ((double)home.alt) * 1.0e-2;      // Alt (amsl) - Origin of the Local NED frame used by the simulation back end (SIM_Aircraft.cpp)
+    pkt.alt_amsl = ((double)location.alt) * 1.0e-2;         // Alt (amsl) of the aircraft
+    pkt.pos_n = position.x;                                 // X Position of the aircraft - In Local NED frame defined just above
+    pkt.pos_e = position.y;                                 // Y Position of the aircraft - In Local NED frame defined just above
+    pkt.pos_d = position.z;                                 // Z Position of the aircraft - In Local NED frame defined just above
     float r, p, y;
     dcm.to_euler(&r, &p, &y);
-    pkt.roll = r;
-    pkt.pitch = p;
-    pkt.yaw = y;
+    pkt.roll = r;                                           // Roll (rad) - Attitude of the Aircraft
+    pkt.pitch = p;                                          // Pitch (rad) - Attitude of the Aircraft
+    pkt.yaw = y;                                            // Yaw (rad) - Attitude of the Aircraft
 
     //Send simulation packet
     _sock.sendto(&pkt, sizeof(pkt), planck_simu_ip, planck_send_port);
