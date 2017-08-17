@@ -26,6 +26,8 @@
 #include "SIM_Gripper_Servo.h"
 #include "SIM_Gripper_EPM.h"
 
+#include <AP_HAL/utility/Socket.h>
+
 namespace SITL {
 
 /*
@@ -43,6 +45,9 @@ public:
         return new MultiCopter(home_str, frame_str);
     }
 
+    void update_planck();
+
+
 protected:
     // calculate rotational and linear accelerations
     void calculate_forces(const struct sitl_input &input, Vector3f &rot_accel, Vector3f &body_accel);
@@ -54,6 +59,34 @@ protected:
     Gripper_EPM gripper_epm{9};
 
     float gross_mass() const override;
+
+private:
+    /*
+     * Simu Planck
+     */
+    struct simu_planck_t {
+      uint64_t time_simu_us;                                // Time is us of the simulation clock - defined by Ardupilot
+      double origin_lat;                                    // Lat - Origin of the Local NED frame used by the simulation back end
+      double origin_lon;                                    // Lon - Origin of the Local NED frame used by the simulation back end
+      double origin_alt_amsl;                               // Alt (amsl) - Origin of the Local NED frame used by the simulation back end
+      double alt_amsl;                                      // Alt (amsl) of the aircraft
+      double pos_n;                                         // X Position of the aircraft - In Local NED frame defined just above
+      double pos_e;                                         // Y Position of the aircraft - In Local NED frame defined just above
+      double pos_d;                                         // Z Position of the aircraft - In Local NED frame defined just above
+      double roll;                                          // Roll (rad) - Attitude of the Aircraft
+      double pitch;                                         // Pitch (rad) - Attitude of the Aircraft
+      double yaw;                                           // Yaw (rad) - Attitude of the Aircraft
+    };
+//    simu_planck_t _simu_planck;
+
+    const char *planck_simu_ip = "0.0.0.0";
+    const uint16_t planck_send_port = 14560;
+    const uint16_t planck_recv_port = 14561;
+
+    SocketAPM _sock;
+    bool _planck_lock = false;
+    int _count_timout = 0;
+    bool _planck_out_sync = false;
 
 };
 
