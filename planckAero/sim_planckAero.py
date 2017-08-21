@@ -14,7 +14,9 @@ import subprocess
 import sys
 import time
 
-root_dir = "../"
+abspath = os.path.abspath(__file__)
+dname = os.path.dirname(abspath)
+root_dir = dname.replace('/planckAero', '')
 
 def progress_cmd(what, cmd):
     """Print cmd in a way a user could cut-and-paste to get the same effect"""
