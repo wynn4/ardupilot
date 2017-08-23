@@ -111,17 +111,22 @@ void MultiCopter::update_planck()
     pkt.pitch = p;                                          // Pitch (rad) - Attitude of the Aircraft
     pkt.yaw = y;                                            // Yaw (rad) - Attitude of the Aircraft
 
+    //Receive planck ctrl ack: Enable the in sync mode
+    simu_planck_t pkt_recv;
+    while(_sock.recv(&pkt_recv, sizeof(pkt_recv), 0) == sizeof(pkt_recv)){
+      //printf("Clean received buffer PL: %u us \n", (unsigned) pkt_recv.time_simu_us);
+    }
+
     //Send simulation packet
     _sock.sendto(&pkt, sizeof(pkt), planck_simu_ip, planck_send_port);
 
     //Check if there is a ack coming back:
-    simu_planck_t pkt_recv;
     if(!_planck_lock){
       if(_sock.recv(&pkt_recv, sizeof(pkt_recv), 0) == sizeof(pkt_recv)){
 
         //If there is a ack: Enable the time locking mechanism
-        hal.console->printf("Planck: Start time lock\n");
-        printf("Planck: Start time lock\n");
+        //hal.console->printf("Planck: Start time lock\n");
+        //printf("Planck: Start time lock\n");
         _planck_lock = true;
       }
     }
@@ -131,20 +136,20 @@ void MultiCopter::update_planck()
 
       //Receive planck ctrl ack: Enable the in sync mode
       if(_sock.recv(&pkt_recv, sizeof(pkt_recv), 10) == sizeof(pkt_recv)){
-        printf("Planck: Out of Sync but response %i \n", _count_timout);
+        //printf("Planck: Out of Sync but response %i \n", _count_timout);
         _count_timout = 0;
         _planck_out_sync = false;
 
       }
       else{
         _count_timout +=1;
-        printf("Planck: Sync no response count: %i \n", _count_timout);
+        //printf("Planck: Sync no response count: %i \n", _count_timout);
       }
 
       //If no answer of a long time: Disable Planck time lock
-      if(_count_timout >= 200){
+      if(_count_timout >= 10){
         hal.console->printf("Planck: Stop time lock\n");
-        printf("Planck: Stop time lock\n");
+       // printf("Planck: Stop time lock\n");
         _planck_out_sync = false;
         _planck_lock = false;
       }
@@ -159,12 +164,12 @@ void MultiCopter::update_planck()
       while(!planck_in_sync && _planck_lock && !_planck_out_sync){
 
         //Receive planck ctrl ack
-        if(_sock.recv(&pkt_recv, sizeof(pkt_recv), 200) == sizeof(pkt_recv)){
+        if(_sock.recv(&pkt_recv, sizeof(pkt_recv), 20) == sizeof(pkt_recv)){
           //If not sync: wait for an other ack msg
           if(pkt_recv.time_simu_us != pkt.time_simu_us){
-            printf("Planck: Out of sync %9.4f ms ", ((double)pkt.time_simu_us - pkt_recv.time_simu_us)/1e3);
-            printf("AP: %u us ", (unsigned) pkt.time_simu_us);
-            printf("PL: %u us \n", (unsigned) pkt_recv.time_simu_us);
+            //printf("Planck: Out of sync %9.4f ms ", ((double)pkt.time_simu_us - pkt_recv.time_simu_us)/1e3);
+            //printf("AP: %u us ", (unsigned) pkt.time_simu_us);
+            //printf("PL: %u us \n", (unsigned) pkt_recv.time_simu_us);
           }
           //In sync: move forward with the simulation
           else{
@@ -177,7 +182,7 @@ void MultiCopter::update_planck()
         else{
           _count_timout = 0;
           _planck_out_sync = true;
-          printf("Planck: Sync no response \n");
+          //printf("Planck: Sync no response \n");
         }
       }
     }
