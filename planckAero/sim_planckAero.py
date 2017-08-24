@@ -80,9 +80,11 @@ binary_basedir = os.path.join(root_dir, "build/sitl");
 
 #Defining frame
 frame_options = {
-        "model": "+",
-        "waf_target": "bin/arducopter-quad",
-        "default_params_filename": "default_params/copter.parm"};
+                 'waf_target'             : 'bin/arducopter',
+                 'sitl-port'              : True,
+                 'model'                  : 'x',
+                 'default_params_filename': 'default_params/copter.parm',
+                 'make_target'            :'sitl'}
 
 #Define location at start-up: Need to be set accordingly with the initial platform location of the planck_ctrl simulation
 location = "32.715736,-117.161087,0,0";
