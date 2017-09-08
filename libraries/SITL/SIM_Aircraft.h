@@ -180,6 +180,8 @@ protected:
 
     virtual bool on_ground() const;
 
+    bool on_tag();
+
     // returns height above ground level in metres
     float hagl() const;  // metres
 
@@ -228,6 +230,31 @@ protected:
     float filtered_idx(float v, uint8_t idx);
     float filtered_servo_angle(const struct sitl_input &input, uint8_t idx);
     float filtered_servo_range(const struct sitl_input &input, uint8_t idx);
+
+    /*
+     * Simu Planck
+     */
+    struct simu_platform_AP_t {
+      uint64_t time_simu_us;                                // Time is us of the simulation clock - defined by Ardupilot
+      double origin_lat;                                    // Lat - Origin of the Local NED frame used by the simulation back end
+      double origin_lon;                                    // Lon - Origin of the Local NED frame used by the simulation back end
+      double origin_alt_amsl;                               // Alt (amsl) - Origin of the Local NED frame used by the simulation back end
+      double alt_amsl;                                      // Alt (amsl) of the aircraft
+      double pos_n;                                         // X Position of the aircraft - In Local NED frame defined just above
+      double pos_e;                                         // Y Position of the aircraft - In Local NED frame defined just above
+      double pos_d;                                         // Z Position of the aircraft - In Local NED frame defined just above
+      double vel_n;                                         // X Velocity of the aircraft - In Local NED frame defined just above
+      double vel_e;                                         // Y Velocity of the aircraft - In Local NED frame defined just above
+      double vel_d;                                         // Z Velocity of the aircraft - In Local NED frame defined just above
+      double roll;                                          // Roll (rad) - Attitude of the Aircraft
+      double pitch;                                         // Pitch (rad) - Attitude of the Aircraft
+      double yaw;                                           // Yaw (rad) - Attitude of the Aircraft
+      double p;                                             // p (rad/s) - Body angular rate of the Aircraft around X body frame
+      double q;                                             // q (rad/s) - Body angular rate of the Aircraft around y body frame
+      double r;                                             // r (rad/s) - Body angular rate of the Aircraft around Z body frame
+    };
+    simu_platform_AP_t _platform_planck;
+    bool _ground_planck_tag = false;
 
 private:
     uint64_t last_time_us = 0;

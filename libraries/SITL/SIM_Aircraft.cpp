@@ -146,7 +146,28 @@ float Aircraft::hagl() const
 */
 bool Aircraft::on_ground() const
 {
+    // Problem: SIM_TERRAIN is enable by default, which make the wind profile changes when the platform moves because the terrain goes up
+    // screwing up the landing.
+    // In _ground_planck_tag: overwrite the ground as it has influence on the wind profile and probably other stuff
+    if(_ground_planck_tag)
+        return false;
+
     return hagl() <= 0;
+}
+
+/*
+   return true if the drone is on the tag (it only checks the altitude)
+*/
+bool Aircraft::on_tag()
+{
+    //Make sure we are sync
+    if(_platform_planck.time_simu_us - time_now_us !=0){
+        //printf("Not sync time_now_us: %u, _platform_planck.time_simu_us: %u \n", (unsigned) time_now_us, (unsigned) _platform_planck.time_simu_us);
+        return false;
+    }
+
+    //printf("Drone asml: %9.9f, platform amsl %9.9f\n", (-position.z) + home.alt * 0.01f - frame_height, _platform_planck.alt_amsl);
+    return (-position.z) + home.alt * 0.01f - frame_height - _platform_planck.alt_amsl  <= 0;
 }
 
 /*
@@ -464,6 +485,56 @@ void Aircraft::update_dynamics(const Vector3f &rot_accel)
 
     // airspeed as seen by a fwd pitot tube (limited to 120m/s)
     airspeed_pitot = constrain_float(velocity_air_bf * Vector3f(1.0f, 0.0f, 0.0f), 0.0f, 120.0f);
+
+    //In Planck simulation mode, replace ground behavior to tag behavior
+    if(_ground_planck_tag){
+        if(on_tag()){
+
+            // Default: zero roll/pitch, but keep yaw
+            float r, p, y;
+            dcm.to_euler(&r, &p, &y);
+            dcm.from_euler(0.0f, 0.0f, y);
+
+            // Default: no X or Y movement
+            velocity_ef.x = 0.0f;
+            velocity_ef.y = 0.0f;
+            if (velocity_ef.z > 0.0f) {
+                velocity_ef.z = 0.0f;
+            }
+
+            //If Planck Platform is moving: Keep the drone centered on the platform
+            if(_platform_planck.vel_n*_platform_planck.vel_n +
+               _platform_planck.vel_e*_platform_planck.vel_e +
+               _platform_planck.vel_d*_platform_planck.vel_d > 0.01){
+
+                //Move the drone according to the platform motion
+                velocity_ef.x = _platform_planck.vel_n;
+                velocity_ef.y = _platform_planck.vel_e;
+                if (velocity_ef.z > _platform_planck.vel_d) {
+                    velocity_ef.z = _platform_planck.vel_d;
+                }
+
+                //Get diff between origin of Drone and Landing platform
+                Location origin_platform;
+                origin_platform.lat = _platform_planck.origin_lat*1e7;
+                origin_platform.lng = _platform_planck.origin_lon*1e7;
+                Vector2f home_to_platform = location_diff(home, origin_platform);
+
+                //Centered the drone on the tag
+                position.x = _platform_planck.pos_n + home_to_platform.x;
+                position.y = _platform_planck.pos_e + home_to_platform.y;
+            }
+
+            //Constraint Z on the tag
+            position.z = home.alt * 0.01f - frame_height - _platform_planck.alt_amsl;
+
+            gyro.zero();
+            use_smoothing = true;
+        }
+
+        //Bypass normal ground behavior in simulation mode
+        return;
+    }
 
     // constrain height to the ground
     if (on_ground()) {

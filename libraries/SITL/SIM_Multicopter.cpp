@@ -55,6 +55,7 @@ MultiCopter::MultiCopter(const char *home_str, const char *frame_str) :
     /*
      * Simu Planck
      */
+    _ground_planck_tag = true;
     _sock.bind("0.0.0.0", planck_recv_port);
     _sock.reuseaddress();
     _sock.set_blocking(false);
@@ -128,7 +129,7 @@ void MultiCopter::update_planck()
     pkt.yaw = y;                                            // Yaw (rad) - Attitude of the Aircraft
 
     //Receive planck ctrl ack: Enable the in sync mode
-    simu_planck_t pkt_recv;
+    simu_platform_AP_t pkt_recv;
     while(_sock.recv(&pkt_recv, sizeof(pkt_recv), 0) == sizeof(pkt_recv)){
       //printf("Clean received buffer PL: %u us \n", (unsigned) pkt_recv.time_simu_us);
     }
@@ -164,7 +165,7 @@ void MultiCopter::update_planck()
 
       //If no answer of a long time: Disable Planck time lock
       if(_count_timout >= 10){
-        hal.console->printf("Planck: Stop time lock\n");
+        //hal.console->printf("Planck: Stop time lock\n");
        // printf("Planck: Stop time lock\n");
         _planck_out_sync = false;
         _planck_lock = false;
@@ -183,7 +184,7 @@ void MultiCopter::update_planck()
         if(_sock.recv(&pkt_recv, sizeof(pkt_recv), 20) == sizeof(pkt_recv)){
           //If not sync: wait for an other ack msg
           if(pkt_recv.time_simu_us != pkt.time_simu_us){
-            //printf("Planck: Out of sync %9.4f ms ", ((double)pkt.time_simu_us - pkt_recv.time_simu_us)/1e3);
+            //printf("Planck: Out of sync %9.4f ms \n", ((double)pkt.time_simu_us - pkt_recv.time_simu_us)/1e3);
             //printf("AP: %u us ", (unsigned) pkt.time_simu_us);
             //printf("PL: %u us \n", (unsigned) pkt_recv.time_simu_us);
           }
@@ -191,6 +192,7 @@ void MultiCopter::update_planck()
           else{
             //printf("Planck: In of sync %9.9f ms \n", ((double)pkt.time_simu_us - pkt_recv.time_simu_us)/1e3);
             planck_in_sync = true;
+            _platform_planck = pkt_recv;
           }
         }
 
