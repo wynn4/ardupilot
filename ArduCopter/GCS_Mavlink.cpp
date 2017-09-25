@@ -706,8 +706,8 @@ const AP_Param::GroupInfo GCS_MAVLINK::var_info[] = {
     AP_GROUPINFO("ADSB",   9, GCS_MAVLINK, streamRates[9],  5),
 
     // @Param: STATEINFO
-    // @DisplayName: STATEINFO stream rate to ground station
-    // @Description: STATEINFO stream rate to ground station
+    // @DisplayName: STATEINFO stream enable to ground station
+    // @Description: STATEINFO stream enable to ground station
     // @Units: Enabale/disable
     // @Range: 0 1
     // @Increment: 1
