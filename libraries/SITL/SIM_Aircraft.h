@@ -254,7 +254,6 @@ protected:
       double r;                                             // r (rad/s) - Body angular rate of the Aircraft around Z body frame
     };
     simu_platform_AP_t _platform_planck;
-    bool _ground_planck_tag = false;
 
 private:
     uint64_t last_time_us = 0;

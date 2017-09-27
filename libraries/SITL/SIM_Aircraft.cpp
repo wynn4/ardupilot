@@ -146,12 +146,6 @@ float Aircraft::hagl() const
 */
 bool Aircraft::on_ground() const
 {
-    // Problem: SIM_TERRAIN is enable by default, which make the wind profile changes when the platform moves because the terrain goes up
-    // screwing up the landing.
-    // In _ground_planck_tag: overwrite the ground as it has influence on the wind profile and probably other stuff
-    if(_ground_planck_tag)
-        return false;
-
     return hagl() <= 0;
 }
 
@@ -487,52 +481,50 @@ void Aircraft::update_dynamics(const Vector3f &rot_accel)
     airspeed_pitot = constrain_float(velocity_air_bf * Vector3f(1.0f, 0.0f, 0.0f), 0.0f, 120.0f);
 
     //In Planck simulation mode, replace ground behavior to tag behavior
-    if(_ground_planck_tag){
-        if(on_tag()){
+    if(on_tag()){
 
-            // Default: zero roll/pitch, but keep yaw
-            float r, p, y;
-            dcm.to_euler(&r, &p, &y);
-            dcm.from_euler(0.0f, 0.0f, y);
+        // Default: zero roll/pitch, but keep yaw
+        float r, p, y;
+        dcm.to_euler(&r, &p, &y);
+        dcm.from_euler(0.0f, 0.0f, y);
 
-            // Default: no X or Y movement
-            velocity_ef.x = 0.0f;
-            velocity_ef.y = 0.0f;
-            if (velocity_ef.z > 0.0f) {
-                velocity_ef.z = 0.0f;
-            }
-
-            //If Planck Platform is moving: Keep the drone centered on the platform
-            if(_platform_planck.vel_n*_platform_planck.vel_n +
-               _platform_planck.vel_e*_platform_planck.vel_e +
-               _platform_planck.vel_d*_platform_planck.vel_d > 0.01){
-
-                //Move the drone according to the platform motion
-                velocity_ef.x = _platform_planck.vel_n;
-                velocity_ef.y = _platform_planck.vel_e;
-                if (velocity_ef.z > _platform_planck.vel_d) {
-                    velocity_ef.z = _platform_planck.vel_d;
-                }
-
-                //Get diff between origin of Drone and Landing platform
-                Location origin_platform;
-                origin_platform.lat = _platform_planck.origin_lat*1e7;
-                origin_platform.lng = _platform_planck.origin_lon*1e7;
-                Vector2f home_to_platform = location_diff(home, origin_platform);
-
-                //Centered the drone on the tag
-                position.x = _platform_planck.pos_n + home_to_platform.x;
-                position.y = _platform_planck.pos_e + home_to_platform.y;
-            }
-
-            //Constraint Z on the tag
-            position.z = home.alt * 0.01f - frame_height - _platform_planck.alt_amsl;
-
-            gyro.zero();
-            use_smoothing = true;
+        // Default: no X or Y movement
+        velocity_ef.x = 0.0f;
+        velocity_ef.y = 0.0f;
+        if (velocity_ef.z > 0.0f) {
+            velocity_ef.z = 0.0f;
         }
 
-        //Bypass normal ground behavior in simulation mode
+        //If Planck Platform is moving: Keep the drone centered on the platform
+        if(_platform_planck.vel_n*_platform_planck.vel_n +
+           _platform_planck.vel_e*_platform_planck.vel_e +
+           _platform_planck.vel_d*_platform_planck.vel_d > 0.01){
+
+            //Move the drone according to the platform motion
+            velocity_ef.x = _platform_planck.vel_n;
+            velocity_ef.y = _platform_planck.vel_e;
+            if (velocity_ef.z > _platform_planck.vel_d) {
+                velocity_ef.z = _platform_planck.vel_d;
+            }
+
+            //Get diff between origin of Drone and Landing platform
+            Location origin_platform;
+            origin_platform.lat = _platform_planck.origin_lat*1e7;
+            origin_platform.lng = _platform_planck.origin_lon*1e7;
+            Vector2f home_to_platform = location_diff(home, origin_platform);
+
+            //Centered the drone on the tag
+            position.x = _platform_planck.pos_n + home_to_platform.x;
+            position.y = _platform_planck.pos_e + home_to_platform.y;
+        }
+
+        //Constraint Z on the tag
+        position.z = home.alt * 0.01f - frame_height - _platform_planck.alt_amsl;
+
+        gyro.zero();
+        use_smoothing = true;
+
+        //Bypass normal ground behavior if on the tag in simulation mode
         return;
     }
 

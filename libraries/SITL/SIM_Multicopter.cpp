@@ -55,7 +55,6 @@ MultiCopter::MultiCopter(const char *home_str, const char *frame_str) :
     /*
      * Simu Planck
      */
-    _ground_planck_tag = true;
     _sock.bind("0.0.0.0", planck_recv_port);
     _sock.reuseaddress();
     _sock.set_blocking(false);
