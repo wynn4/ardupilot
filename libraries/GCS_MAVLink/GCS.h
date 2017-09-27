@@ -211,6 +211,8 @@ public:
     bool telemetry_delayed(mavlink_channel_t chan);
     virtual uint32_t telem_delay() const = 0;
 
+    bool should_send_stateinfo(void) { return streamStateInfo; };
+
 protected:
 
     // overridable method to check for packet acceptance. Allows for
@@ -231,6 +233,8 @@ protected:
 
     // saveable rate of each stream
     AP_Int16        streamRates[NUM_STREAMS];
+
+    AP_Int8 streamStateInfo; //If the stateinfo message should be streamed at 50hz
 
     void handle_request_data_stream(mavlink_message_t *msg, bool save);
     FUNCTOR_TYPEDEF(set_mode_fn, bool, uint8_t);

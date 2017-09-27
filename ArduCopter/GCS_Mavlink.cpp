@@ -11,7 +11,7 @@ void Copter::gcs_send_heartbeat(void)
 void Copter::gcs_send_stateinfo(void)
 {
     for (uint8_t i=0; i<num_gcs; i++) {
-        if (gcs_chan[i].initialised) {
+        if (gcs_chan[i].should_send_stateinfo() && gcs_chan[i].initialised) {
             gcs_chan[i].state_send();
         }
     }
@@ -704,6 +704,15 @@ const AP_Param::GroupInfo GCS_MAVLINK::var_info[] = {
     // @Increment: 1
     // @User: Advanced
     AP_GROUPINFO("ADSB",   9, GCS_MAVLINK, streamRates[9],  5),
+
+    // @Param: STATEINFO
+    // @DisplayName: STATEINFO stream enable to ground station
+    // @Description: STATEINFO stream enable to ground station
+    // @Units: Enabale/disable
+    // @Range: 0 1
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("STATEINFO",   10, GCS_MAVLINK, streamStateInfo,  0),
 AP_GROUPEND
 };
 
