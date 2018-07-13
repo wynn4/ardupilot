@@ -1800,6 +1800,7 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
          */
 
         Vector3f pos_ned;
+        Location loc;
 
         if(!pos_ignore) {
             // sanity check location
@@ -1807,7 +1808,6 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
                 result = MAV_RESULT_FAILED;
                 break;
             }
-            Location loc;
             loc.lat = packet.lat_int;
             loc.lng = packet.lon_int;
             loc.alt = packet.alt*100;
@@ -1850,7 +1850,7 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
         } else if (pos_ignore && !vel_ignore && acc_ignore) {
             copter.guided_set_velocity(Vector3f(packet.vx * 100.0f, packet.vy * 100.0f, -packet.vz * 100.0f), !yaw_ignore, yaw_cd, !yaw_rate_ignore, yaw_rate_cds, yaw_relative);
         } else if (!pos_ignore && vel_ignore && acc_ignore) {
-            if (!copter.guided_set_destination(pos_ned, !yaw_ignore, yaw_cd, !yaw_rate_ignore, yaw_rate_cds, yaw_relative)) {
+            if (!copter.guided_set_destination(loc, !yaw_ignore, yaw_cd, !yaw_rate_ignore, yaw_rate_cds, yaw_relative)) {
                 result = MAV_RESULT_FAILED;
             }
         } else {
