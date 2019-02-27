@@ -1241,3 +1241,24 @@ protected:
 
     uint32_t last_log_ms;   // system time of last time desired velocity was logging
 };
+
+class ModePlanckTracking : public ModeGuided {
+    
+public:
+    
+    // inherit constructor
+    using Copter::ModeGuided::Mode;
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+    bool requires_GPS() const override { return false; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(bool from_gcs) const override { return true; }
+    bool is_autopilot() const override { return true; }
+    virtual bool has_user_takeoff(bool must_navigate) const { return true; }
+    
+protected:
+    
+    const char *name() const override { return "PLANCKTAKEOFF"; }
+    const char *name4() const override { return "PLTO"; }
+};
