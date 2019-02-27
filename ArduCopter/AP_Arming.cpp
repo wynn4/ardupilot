@@ -616,6 +616,16 @@ bool AP_Arming_Copter::arm_checks(bool display_failure, bool arming_from_gcs)
         return false;
     }
 
+    // check planck if arming from gcs
+    if(arming_from_gcs) {
+        if(!copter.planck_interface.ready_for_takeoff()) {
+            if (display_failure) {
+                gcs().send_text(MAV_SEVERITY_CRITICAL,"Arm: Planck not ready for arming, check tag");
+            }
+            return false;
+        }
+    }
+
     // superclass method should always be the last thing called; it
     // has side-effects which would need to be cleaned up if one of
     // our arm checks failed

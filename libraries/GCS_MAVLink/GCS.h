@@ -83,6 +83,7 @@ enum ap_message : uint8_t {
     MSG_LANDING,
     MSG_ESC_TELEMETRY,
     MSG_NAMED_FLOAT,
+    MSG_PLANCK_STATEINFO,
     MSG_LAST // MSG_LAST must be the last entry in this enum
 };
 
@@ -141,6 +142,7 @@ public:
         STREAM_EXTRA3,
         STREAM_PARAMS,
         STREAM_ADSB,
+        STREAM_PLANCK,
         NUM_STREAMS
     };
 

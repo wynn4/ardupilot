@@ -83,6 +83,7 @@
 #include <AP_Arming/AP_Arming.h>
 #include <AP_SmartRTL/AP_SmartRTL.h>
 #include <AP_TempCalibration/AP_TempCalibration.h>
+#include <AC_Planck/AC_Planck.h>
 
 // Configuration
 #include "defines.h"
@@ -626,6 +627,8 @@ private:
     static const AP_Scheduler::Task scheduler_tasks[];
     static const AP_Param::Info var_info[];
     static const struct LogStructure log_structure[];
+
+    AC_Planck planck_interface;
 
     enum Failsafe_Action {
         Failsafe_Action_None           = 0,

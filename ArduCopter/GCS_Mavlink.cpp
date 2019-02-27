@@ -361,6 +361,26 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
         copter.adsb.send_adsb_vehicle(chan);
 #endif
         break;
+        
+    case MSG_PLANCK_STATEINFO:
+        CHECK_PAYLOAD_SIZE(PLANCK_STATEINFO);
+        copter.planck_interface.send_stateinfo(chan,
+            copter.control_mode,
+            copter.motors->armed(),
+            !copter.ap.land_complete,
+            (
+                copter.failsafe.radio ||
+                copter.battery.has_failsafed() ||
+                copter.failsafe.gcs ||
+                copter.failsafe.ekf ||
+                copter.failsafe.terrain ||
+                copter.failsafe.adsb
+            ),
+            copter.ahrs,
+            copter.inertial_nav,
+            copter.current_loc,
+            copter.gps);
+        break;
 
     default:
         return GCS_MAVLINK::try_send_message(id);
@@ -459,6 +479,15 @@ const AP_Param::GroupInfo GCS_MAVLINK::var_info[] = {
     // @Increment: 1
     // @User: Advanced
     AP_GROUPINFO("ADSB",   9, GCS_MAVLINK, streamRates[9],  5),
+    
+    // @Param: PLANCK_STATE
+    // @DisplayName: PLANCK_STATE stream rate to planck device
+    // @Description: PLANCK_STATE stream rate to planck device
+    // @Units: Hz
+    // @Range: 0 50
+    // @Increment: 1
+    // @User: Advanced
+    AP_GROUPINFO("PLANCK_STATE",   10, GCS_MAVLINK, streamRates[10],  0),
 AP_GROUPEND
 };
 
@@ -520,6 +549,9 @@ static const ap_message STREAM_EXTRA3_msgs[] = {
 static const ap_message STREAM_ADSB_msgs[] = {
     MSG_ADSB_VEHICLE
 };
+static const ap_message STREAM_PLANCK_msgs[] = {
+    MSG_PLANCK_STATEINFO
+};
 
 const struct GCS_MAVLINK::stream_entries GCS_MAVLINK::all_stream_entries[] = {
     MAV_STREAM_ENTRY(STREAM_RAW_SENSORS),
@@ -531,6 +563,7 @@ const struct GCS_MAVLINK::stream_entries GCS_MAVLINK::all_stream_entries[] = {
     MAV_STREAM_ENTRY(STREAM_EXTRA2),
     MAV_STREAM_ENTRY(STREAM_EXTRA3),
     MAV_STREAM_ENTRY(STREAM_ADSB),
+    MAV_STREAM_ENTRY(STREAM_PLANCK),
     MAV_STREAM_TERMINATOR // must have this at end of stream_entries
 };
 
@@ -609,6 +642,15 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
     MAV_RESULT result = MAV_RESULT_FAILED;         // assume failure.  Each messages id is responsible for return ACK or NAK if required
 
     switch (msg->msgid) {
+        
+    //Handle any messages coming from planck's software
+    case MAVLINK_MSG_ID_PLANCK_STATUS:
+    case MAVLINK_MSG_ID_PLANCK_ATT_CMD_MSG:
+    case MAVLINK_MSG_ID_PLANCK_VEL_CMD_MSG:
+    case MAVLINK_MSG_ID_PLANCK_POS_CMD_MSG:
+        copter.planck_interface.handle_planck_mavlink_msg(chan, msg,
+            copter.ahrs);
+        break;
 
     case MAVLINK_MSG_ID_HEARTBEAT:      // MAV ID: 0
     {

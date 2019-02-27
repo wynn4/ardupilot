@@ -1013,6 +1013,7 @@ ParametersG2::ParametersG2(void)
 #if MODE_FOLLOW_ENABLED == ENABLED
     ,follow()
 #endif
+    ,planck_interface(copter.planck_interface)
 {
     AP_Param::setup_object_defaults(this, var_info);
 }
