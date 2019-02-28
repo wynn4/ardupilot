@@ -1,6 +1,19 @@
 #include "Copter.h"
 
 bool Copter::ModePlanckTracking::init(bool ignore_checks){
+    //If the copter is currently in-flight, entry into this mode indicates
+    //that the user would like to return to the tag tracking, so run RTB
+    if(!copter.ap.land_complete)
+    {
+        copter.planck_interface.request_rtb(
+          (float)copter.g.rtl_altitude/100.,
+          copter.pos_control->get_speed_up()/100.,
+          copter.pos_control->get_speed_down()/100.);
+    }
+    
+    //Otherwise do nothing, as we are on the ground waiting for a takeoff
+    //command
+    
     return Copter::ModeGuided::init(ignore_checks);
 }
 
