@@ -1264,7 +1264,7 @@ protected:
     const char *name4() const override { return "PLTO"; }
 };
 
-class ModePlanckLand : public ModeGuided {
+class ModePlanckLand : public ModeGuidedNoGPS {
 
 public:
 
