@@ -110,7 +110,7 @@
           chan,
           PLANCK_SYS_ID,
           PLANCK_CTRL_COMP_ID,
-          AP_HAL::micros(),
+          AP_HAL::micros64(),
           gps.time_epoch_usec(),
           control_mode,
           status,
