@@ -71,6 +71,8 @@ public:
   bool is_sending_position_cmds() { return (_last_cmd_type == POSITION); };
   
   bool is_takeoff_complete() { return _status.takeoff_complete; };
+  
+  bool new_command_available() { return _new_command_available; };
           
 private:
           
@@ -127,6 +129,8 @@ private:
   const uint32_t _cmd_timeout_att_ms = 100;
   const uint32_t _cmd_timeout_accel_ms = 100;
   const uint32_t _cmd_timeout_vel_ms = 500;
+  
+  bool _new_command_available = false;
   
   bool _is_status_ok(void) { return ((AP_HAL::millis() - _status.timestamp_ms) < 500); }
 };

@@ -29,6 +29,7 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
       _accel_cmd.use_yaw_rate = (bool)mavlink_msg_planck_accel_cmd_msg_get_use_yaw_rate(mav_msg);
       _accel_cmd.vz_cms = mavlink_msg_planck_accel_cmd_msg_get_vz(mav_msg) * 100.;
       _last_cmd_type = ACCEL;
+      _new_command_available = true;
       break;
 
      case MAVLINK_MSG_ID_PLANCK_ATT_CMD_MSG:
@@ -40,6 +41,7 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
       _attitude_cmd.use_yaw_rate = (bool)mavlink_msg_planck_att_cmd_msg_get_use_yaw_rate(mav_msg);
       _attitude_cmd.vz_cms = mavlink_msg_planck_att_cmd_msg_get_vz(mav_msg) * 100.;
       _last_cmd_type = ATTITUDE;
+      _new_command_available = true;
       break;
 
      case MAVLINK_MSG_ID_PLANCK_VEL_CMD_MSG:
@@ -49,6 +51,7 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
       _velocity_cmd_cms.z = -mavlink_msg_planck_vel_cmd_msg_get_vz(mav_msg) * 100.; //Ardu uses positive up
       _velocity_yaw_cmd_cd = ToDeg(mavlink_msg_planck_vel_cmd_msg_get_yaw(mav_msg)) * 100.;
       _last_cmd_type = VELOCITY;
+      _new_command_available = true;
       break;
 
     case MAVLINK_MSG_ID_PLANCK_POS_CMD_MSG:
@@ -77,6 +80,7 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
           break;
       }
 
+      _new_command_available = true;
       _position_cmd_stale = false;
       _last_cmd_type = POSITION;
       break;
@@ -197,6 +201,7 @@ bool AC_Planck::get_accel_cmd(float &accel_n,
   is_yaw_rate = _accel_cmd.use_yaw_rate;
   vz_cms = _accel_cmd.vz_cms;
   
+  _new_command_available = false;
   return true;
 }
 
@@ -214,6 +219,7 @@ bool AC_Planck::get_attitude_cmd(float &roll_cd,
   yaw_cd = _attitude_cmd.yaw_cd;
   is_yaw_rate = _attitude_cmd.use_yaw_rate;
   
+  _new_command_available = false;
   return true;
 }
 
@@ -231,6 +237,7 @@ bool AC_Planck::get_attitude_z_rate_cmd(float &roll_cd,
   
   vz_cms = _attitude_cmd.vz_cms;
   
+  _new_command_available = false;
   return true;
 }
 
@@ -241,6 +248,7 @@ bool AC_Planck::get_velocity_cmd_cms(Vector3f &vel_cmd, float &yaw_cmd_cd)
     return false;
   
   vel_cmd = _velocity_cmd_cms;
+  _new_command_available = false;
   return true;
 }
 
@@ -253,5 +261,6 @@ bool AC_Planck::get_position_cmd(Location &loc_cmd)
   loc_cmd = _position_cmd;
   _position_cmd_stale = true;
   
+  _new_command_available = false;
   return true;
 }
