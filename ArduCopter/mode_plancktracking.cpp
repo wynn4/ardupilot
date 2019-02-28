@@ -18,10 +18,10 @@ void Copter::ModePlanckTracking::run(){
             roll_cd = pitch_cd = yaw_cd = vz_cms = 0;
             is_yaw_rate = true;
         }
-        
+
         //Convert this to quaternions, yaw rates
         Quaternion q;
-        q.from_euler(roll_cd/100., pitch_cd/100., yaw_cd/100.);
+        q.from_euler(ToRad(roll_cd/100.), ToRad(pitch_cd/100.), ToRad(yaw_cd/100.));
         float yaw_rate_rads = ToRad(yaw_cd / 100.);
     
         //Update the GUIDED mode controller
@@ -50,4 +50,22 @@ void Copter::ModePlanckTracking::run(){
     
     //Run the guided mode controller
     Copter::ModeGuided::run();
+}
+
+bool Copter::ModePlanckTracking::do_user_takeoff_start(float final_alt_above_home)
+{
+    // Check if planck is ready
+    if(!copter.planck_interface.ready_for_takeoff())
+      return false;
+
+    // Tell planck to start commanding
+    copter.planck_interface.request_takeoff(final_alt_above_home/100.);
+
+    // initialise yaw
+    auto_yaw.set_mode(AUTO_YAW_HOLD);
+
+    // clear i term when we're taking off
+    set_throttle_takeoff();
+
+    return true;
 }
