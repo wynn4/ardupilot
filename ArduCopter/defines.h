@@ -114,6 +114,7 @@ enum control_mode_t {
     FLOWHOLD  =    22,  // FLOWHOLD holds position with optical flow without rangefinder
     FOLLOW    =    23,  // follow attempts to follow another vehicle or ground station
     PLANCK_TAKEOFF = 24, //Planck-specific takeoff mode
+    PLANCK_LAND = 25, //Planck-specific land mode
 };
 
 enum mode_reason_t {
