@@ -22,8 +22,8 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
 
      case MAVLINK_MSG_ID_PLANCK_ACCEL_CMD_MSG:
       _accel_cmd.timestamp_ms = AP_HAL::millis();
-      _accel_cmd.accel_n = ToDeg(mavlink_msg_planck_accel_cmd_msg_get_acc_n(mav_msg));
-      _accel_cmd.accel_e = ToDeg(mavlink_msg_planck_accel_cmd_msg_get_acc_e(mav_msg));
+      _accel_cmd.accel_n = mavlink_msg_planck_accel_cmd_msg_get_acc_n(mav_msg);
+      _accel_cmd.accel_e = mavlink_msg_planck_accel_cmd_msg_get_acc_e(mav_msg);
       _accel_cmd.yaw_cd = ToDeg(mavlink_msg_planck_accel_cmd_msg_get_yaw(mav_msg)) * 100.;
       _accel_cmd.yaw_rate_cds = ToDeg(mavlink_msg_planck_accel_cmd_msg_get_yaw_rate(mav_msg)) * 100.;
       _accel_cmd.use_yaw_rate = (bool)mavlink_msg_planck_accel_cmd_msg_get_use_yaw_rate(mav_msg);
