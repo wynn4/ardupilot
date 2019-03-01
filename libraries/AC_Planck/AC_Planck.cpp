@@ -56,7 +56,7 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
         //velocity
         _cmd.vel_cms.x = pc.vel[0] * 100.;
         _cmd.vel_cms.y = pc.vel[1] * 100.;
-        _cmd.vel_cms.z = -pc.vel[2] * 100.; //Ardu uses positive up
+        _cmd.vel_cms.z = pc.vel[2] * 100.;
         
         //acceleration
         _cmd.accel_cmss.x = pc.acc[0] * 100.;
@@ -69,13 +69,13 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
         _cmd.att_cd.z = pc.att[2] * 100.;
     
         //Determine which values are good
-        bool use_pos = pc.type_mask & 0x0007;
-        bool use_vel = pc.type_mask & 0x0038;
-        bool use_vz  = pc.type_mask & 0x0020;
-        bool use_acc = pc.type_mask & 0x01C0;
-        bool use_att = pc.type_mask & 0x0E00;
-        bool use_y   = pc.type_mask & 0x0800;
-        bool use_yr  = pc.type_mask & 0x1000;
+        bool use_pos = (pc.type_mask & 0x0007) == 0x0007;
+        bool use_vel = (pc.type_mask & 0x0038) == 0x0038;
+        bool use_vz  = (pc.type_mask & 0x0020) == 0x0020;
+        bool use_acc = (pc.type_mask & 0x01C0) == 0x01C0;
+        bool use_att = (pc.type_mask & 0x0E00) == 0x0E00;
+        bool use_y   = (pc.type_mask & 0x0800) == 0x0800;
+        bool use_yr  = (pc.type_mask & 0x1000) == 0x1000;
     
         _cmd.is_yaw_rate = use_yr;
 
@@ -85,23 +85,24 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
           _cmd.type = POSITION;
           
         //If position and velocity and yaw/yawrate are set, this is a posvel
-        if(use_pos && use_vel && !use_acc && !use_att && (use_y || use_yr))
+        else if(use_pos && use_vel && !use_acc && !use_att && (use_y || use_yr))
           _cmd.type = POSVEL;
           
         //If velocity and yaw/yawrate are set, this is a velocity command
-        if(!use_pos && use_vel && !use_acc && !use_att && (use_y || use_yr))
+        else if(!use_pos && use_vel && !use_acc && !use_att && (use_y || use_yr))
           _cmd.type = VELOCITY;
 
         //If attitude and vz and yaw/yawrate are set, this is an attitude command
-        if(!use_pos && !use_vel && use_vz && !use_acc && use_att && (use_y || use_yr))
+        else if(!use_pos && !use_vel && use_vz && !use_acc && use_att && (use_y || use_yr))
           _cmd.type = ATTITUDE;
 
         //If accel and vz and yaw/yawrate are set, this is an accel command
-        if(!use_pos && !use_vel && use_vz && use_acc && !use_att && (use_y || use_yr))
+        else if(!use_pos && !use_vel && use_vz && use_acc && !use_att && (use_y || use_yr))
           _cmd.type = ACCEL;
           
         //Otherwise we don't know what this is
-        _cmd.type = NONE;
+        else
+          _cmd.type = NONE;
 
         //This is a new command
         _cmd.is_new = true;
