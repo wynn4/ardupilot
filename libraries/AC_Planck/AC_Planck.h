@@ -12,13 +12,24 @@
 class AC_Planck {
   
 public:
+
+  enum cmd_type {
+    NONE=0,
+    ACCEL,
+    ATTITUDE,
+    VELOCITY,
+    POSITION,
+    POSVEL
+  };
+
   AC_Planck(void) {}
   
   ~AC_Planck(void) {}
+
+  //Handle incoming messages
+  void handle_planck_mavlink_msg(const mavlink_channel_t &chan, const mavlink_message_t *mav_msg, AP_AHRS &ahrs);
   
-  void handle_planck_mavlink_msg(const mavlink_channel_t &chan, const mavlink_message_t *mav_msg,
-    AP_AHRS &ahrs);
-    
+  //Send the planck stateinfo message  
   void send_stateinfo(const mavlink_channel_t &chan,
     uint8_t control_mode,
     bool armed,
@@ -28,79 +39,50 @@ public:
     AP_InertialNav &inertial_nav,
     Location &current_loc,
     AP_GPS &gps);
-      
+
+  //Requesters to be sent to planck  
   void request_takeoff(const float alt);
-  
   void request_rtb(const float alt, const float rate_up, const float rate_down);
-  
   void request_land(const float descent_rate);
-  
   void stop_commanding(void);
-  
+
+  //planck status getters
   bool ready_for_takeoff(void) { return _is_status_ok() && _status.takeoff_ready; };
-  
   bool ready_for_land(void) { return _is_status_ok() && _status.land_ready; };
-
-  bool get_accel_cmd(float &accel_n,
-    float &accel_e,
-    float &yaw_cd,
-    float &vz_cms,
-    bool &is_yaw_rate);
-
-  bool get_attitude_cmd(float &roll_cd,
-    float &pitch_cd,
-    float &yaw_cd,
-    bool &is_yaw_rate);
-      
-  bool get_attitude_z_rate_cmd(float &roll_cd,
-    float &pitch_cd,
-    float &yaw_cd,
-    float &vz_cms,
-    bool &is_yaw_rate);
-    
-  bool get_velocity_cmd_cms(Vector3f &vel_cmd, float &yaw_cmd_cd);
-  
-  bool get_position_cmd(Location &loc_cmd);
-  
-  bool get_posvel_cmd(Location &loc_cmd, Vector3f &vel_cmd, float &yaw_cmd_cd, float &yaw_rate_cmd_cds, bool &use_yaw_rate);
-  
-  bool is_sending_accel_cmds() { return (_last_cmd_type == ACCEL); };
-
-  bool is_sending_attitude_cmds() { return (_last_cmd_type == ATTITUDE); };
-  
-  bool is_sending_velocity_cmds() { return (_last_cmd_type == VELOCITY); };
-  
-  bool is_sending_position_cmds() { return (_last_cmd_type == POSITION); };
-  
-  bool is_sending_posvel_cmds() { return (_last_cmd_type == POSVEL); };
-  
   bool is_takeoff_complete() { return _status.takeoff_complete; };
+
+  //command getters
+  cmd_type get_cmd_type(void) { return _cmd.type; }
+  bool new_command_available() { return _cmd.is_new; };
+
+  //Get an accel, yaw, z_rate command
+  bool get_accel_yaw_zrate_cmd(Vector3f &accel_cmss, float &yaw_cd, float &vz_cms, bool &is_yaw_rate);
+
+  //Get an attitude command
+  bool get_attitude_zrate_cmd(Vector3f &att_cd, float &vz_cms, bool &is_yaw_rate);
+
+  //Get a velocity, yaw command
+  bool get_velocity_yaw_cmd(Vector3f &vel_cms, float &yaw_cd);
+
+  //Get a position command  
+  bool get_position_cmd(Location &loc);
+
+  //Get a position, velocity, yaw command  
+  bool get_posvel_cmd(Location &loc, Vector3f &vel_cms, float &yaw_cd, bool &is_yaw_rate);
   
-  bool new_command_available() { return _new_command_available; };
-          
 private:
-          
+
   struct
   {
-    float accel_n = 0;
-    float accel_e = 0;
-    float yaw_cd = 0;
-    float yaw_rate_cds = 0;
-    bool use_yaw_rate = true;
-    float vz_cms = 0;
+    Location pos;
+    Vector3f vel_cms;
+    Vector3f accel_cmss;
+    Vector3f att_cd;
+    bool is_yaw_rate = true;
     uint32_t timestamp_ms = 0;
-  }_accel_cmd;
-  
-  struct
-  {
-    float roll_cd = 0;
-    float pitch_cd = 0;
-    float yaw_cd = 0;
-    float yaw_rate_cds = 0;
-    bool use_yaw_rate = true;
-    float vz_cms = 0;
-    uint32_t timestamp_ms = 0;
-  }_attitude_cmd;
+    bool is_new = false;
+    cmd_type type = NONE;
+  }_cmd;
   
   struct
   {
@@ -114,36 +96,7 @@ private:
     uint32_t timestamp_ms = 0;
   }_status;
   
-  enum{
-    ACCEL=0,
-    ATTITUDE,
-    VELOCITY,
-    POSITION,
-    POSVEL
-  }_last_cmd_type = ATTITUDE;
-  
-  Vector3f _velocity_cmd_cms;
-  float _velocity_yaw_cmd_cd = 0;
-  uint32_t _velocity_timestamp_ms = 0;
-  
-  Location _position_cmd;
-  
-  struct
-  {
-    Location pos_cmd;
-    Vector3f vel_cmd;
-    float yaw_cmd_cd;
-    float yaw_rate_cmd_cds;
-    bool use_yaw_rate;
-  }_posvel_cmd;
-  
   mavlink_channel_t _chan = MAVLINK_COMM_1;
-  
-  const uint32_t _cmd_timeout_att_ms = 100;
-  const uint32_t _cmd_timeout_accel_ms = 100;
-  const uint32_t _cmd_timeout_vel_ms = 500;
-  
-  bool _new_command_available = false;
   
   bool _is_status_ok(void) { return ((AP_HAL::millis() - _status.timestamp_ms) < 500); }
 };

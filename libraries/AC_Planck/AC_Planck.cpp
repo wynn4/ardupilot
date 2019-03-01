@@ -7,120 +7,105 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
 {
   switch(mav_msg->msgid)
   {
-
      case MAVLINK_MSG_ID_PLANCK_STATUS:
-      _chan = chan; //Set the channel based on the incoming status message
-      _status.timestamp_ms = AP_HAL::millis();
-      _status.takeoff_ready = (bool)mavlink_msg_planck_status_get_takeoff_ready(mav_msg);
-      _status.land_ready = (bool)mavlink_msg_planck_status_get_land_ready(mav_msg);
-      _status.commbox_ok = (bool)(mavlink_msg_planck_status_get_failsafe(mav_msg) & 0x01);
-      _status.commbox_gps_ok = (bool)(mavlink_msg_planck_status_get_failsafe(mav_msg) & 0x02);
-      _status.tracking_tag = (bool)(mavlink_msg_planck_status_get_status(mav_msg) & 0x01);
-      _status.tracking_commbox_gps = (bool)(mavlink_msg_planck_status_get_status(mav_msg) & 0x02);
-      _status.takeoff_complete = (bool)mavlink_msg_planck_status_get_takeoff_complete(mav_msg);
-      break;
-
-     case MAVLINK_MSG_ID_PLANCK_ACCEL_CMD_MSG:
-      _accel_cmd.timestamp_ms = AP_HAL::millis();
-      _accel_cmd.accel_n = mavlink_msg_planck_accel_cmd_msg_get_acc_n(mav_msg);
-      _accel_cmd.accel_e = mavlink_msg_planck_accel_cmd_msg_get_acc_e(mav_msg);
-      _accel_cmd.yaw_cd = ToDeg(mavlink_msg_planck_accel_cmd_msg_get_yaw(mav_msg)) * 100.;
-      _accel_cmd.yaw_rate_cds = ToDeg(mavlink_msg_planck_accel_cmd_msg_get_yaw_rate(mav_msg)) * 100.;
-      _accel_cmd.use_yaw_rate = (bool)mavlink_msg_planck_accel_cmd_msg_get_use_yaw_rate(mav_msg);
-      _accel_cmd.vz_cms = mavlink_msg_planck_accel_cmd_msg_get_vz(mav_msg) * 100.;
-      _last_cmd_type = ACCEL;
-      _new_command_available = true;
-      break;
-
-     case MAVLINK_MSG_ID_PLANCK_ATT_CMD_MSG:
-      _attitude_cmd.timestamp_ms = AP_HAL::millis();
-      _attitude_cmd.roll_cd = ToDeg(mavlink_msg_planck_att_cmd_msg_get_roll(mav_msg)) * 100.;
-      _attitude_cmd.pitch_cd = ToDeg(mavlink_msg_planck_att_cmd_msg_get_pitch(mav_msg)) * 100.;
-      _attitude_cmd.yaw_cd = ToDeg(mavlink_msg_planck_att_cmd_msg_get_yaw(mav_msg)) * 100.;
-      _attitude_cmd.yaw_rate_cds = ToDeg(mavlink_msg_planck_att_cmd_msg_get_yaw_rate(mav_msg)) * 100.;
-      _attitude_cmd.use_yaw_rate = (bool)mavlink_msg_planck_att_cmd_msg_get_use_yaw_rate(mav_msg);
-      _attitude_cmd.vz_cms = mavlink_msg_planck_att_cmd_msg_get_vz(mav_msg) * 100.;
-      _last_cmd_type = ATTITUDE;
-      _new_command_available = true;
-      break;
-
-     case MAVLINK_MSG_ID_PLANCK_VEL_CMD_MSG:
-      _velocity_timestamp_ms = AP_HAL::millis();
-      _velocity_cmd_cms.x = mavlink_msg_planck_vel_cmd_msg_get_vx(mav_msg) * 100.;
-      _velocity_cmd_cms.y = mavlink_msg_planck_vel_cmd_msg_get_vy(mav_msg) * 100.;
-      _velocity_cmd_cms.z = -mavlink_msg_planck_vel_cmd_msg_get_vz(mav_msg) * 100.; //Ardu uses positive up
-      _velocity_yaw_cmd_cd = ToDeg(mavlink_msg_planck_vel_cmd_msg_get_yaw(mav_msg)) * 100.;
-      _last_cmd_type = VELOCITY;
-      _new_command_available = true;
-      break;
-
-    case MAVLINK_MSG_ID_PLANCK_POS_CMD_MSG:
-    {
-      _position_cmd.lat = mavlink_msg_planck_pos_cmd_msg_get_latitude(mav_msg);
-      _position_cmd.lng = mavlink_msg_planck_pos_cmd_msg_get_longitude(mav_msg);
-      _position_cmd.alt = mavlink_msg_planck_pos_cmd_msg_get_altitude(mav_msg)/10; //mm->cm
-
-       switch(mavlink_msg_planck_pos_cmd_msg_get_frame(mav_msg)) {
-        case MAV_FRAME_GLOBAL_RELATIVE_ALT:
-        case MAV_FRAME_GLOBAL_RELATIVE_ALT_INT:
-          _position_cmd.flags.relative_alt = true;
-          _position_cmd.flags.terrain_alt = false;
-          break;
-        case MAV_FRAME_GLOBAL_TERRAIN_ALT_INT:
-          _position_cmd.flags.relative_alt = true;
-          _position_cmd.flags.terrain_alt = true;
-          break;
-        case MAV_FRAME_GLOBAL_INT:
-        default:
-          // Copter does not support navigation to absolute altitudes. This convert the WGS84 altitude
-          // to a home-relative altitude before passing it to the navigation controller
-          _position_cmd.alt -= ahrs.get_home().alt;
-          _position_cmd.flags.relative_alt = true;
-          _position_cmd.flags.terrain_alt = false;
-          break;
-      }
-
-      _new_command_available = true;
-      _last_cmd_type = POSITION;
-      break;
+     {
+        _chan = chan; //Set the channel based on the incoming status message
+        mavlink_planck_status_t ps;
+        mavlink_msg_planck_status_decode(mav_msg, &ps);
+        _status.timestamp_ms = AP_HAL::millis();
+        _status.takeoff_ready = (bool)ps.takeoff_ready;
+        _status.land_ready = (bool)ps.land_ready;
+        _status.commbox_ok = (bool)(ps.failsafe & 0x01);
+        _status.commbox_gps_ok = (bool)(ps.failsafe & 0x02);
+        _status.tracking_tag = (bool)(ps.status & 0x01);
+        _status.tracking_commbox_gps = (bool)(ps.status & 0x02);
+        _status.takeoff_complete = (bool)ps.takeoff_complete;
+        break;
     }
 
-    case MAVLINK_MSG_ID_PLANCK_POSVEL_CMD_MSG:
-    {
-      _posvel_cmd.pos_cmd.lat = mavlink_msg_planck_posvel_cmd_msg_get_latitude(mav_msg);
-      _posvel_cmd.pos_cmd.lng = mavlink_msg_planck_posvel_cmd_msg_get_longitude(mav_msg);
-      _posvel_cmd.pos_cmd.alt = mavlink_msg_planck_posvel_cmd_msg_get_altitude(mav_msg)/10; //mm->cm
+     case MAVLINK_MSG_ID_PLANCK_CMD_MSG:
+     {
+        mavlink_planck_cmd_msg_t pc;
+        mavlink_msg_planck_cmd_msg_decode(mav_msg, &pc);
+        
+        //position data
+        _cmd.pos.lat = pc.lat;
+        _cmd.pos.lng = pc.lon;
+        _cmd.pos.alt = pc.alt * 100; //m->cm
 
-       switch(mavlink_msg_planck_posvel_cmd_msg_get_frame(mav_msg)) {
-        case MAV_FRAME_GLOBAL_RELATIVE_ALT:
-        case MAV_FRAME_GLOBAL_RELATIVE_ALT_INT:
-          _posvel_cmd.pos_cmd.flags.relative_alt = true;
-          _posvel_cmd.pos_cmd.flags.terrain_alt = false;
-          break;
-        case MAV_FRAME_GLOBAL_TERRAIN_ALT_INT:
-          _posvel_cmd.pos_cmd.flags.relative_alt = true;
-          _posvel_cmd.pos_cmd.flags.terrain_alt = true;
-          break;
-        case MAV_FRAME_GLOBAL_INT:
-        default:
-          // Copter does not support navigation to absolute altitudes. This convert the WGS84 altitude
-          // to a home-relative altitude before passing it to the navigation controller
-          _posvel_cmd.pos_cmd.alt -= ahrs.get_home().alt;
-          _posvel_cmd.pos_cmd.flags.relative_alt = true;
-          _posvel_cmd.pos_cmd.flags.terrain_alt = false;
-          break;
-      }
+         switch(pc.frame) {
+            case MAV_FRAME_GLOBAL_RELATIVE_ALT:
+            case MAV_FRAME_GLOBAL_RELATIVE_ALT_INT:
+              _cmd.pos.flags.relative_alt = true;
+              _cmd.pos.flags.terrain_alt = false;
+              break;
+            case MAV_FRAME_GLOBAL_TERRAIN_ALT_INT:
+              _cmd.pos.flags.relative_alt = true;
+              _cmd.pos.flags.terrain_alt = true;
+              break;
+            case MAV_FRAME_GLOBAL_INT:
+            default:
+              // Copter does not support navigation to absolute altitudes. This convert the WGS84 altitude
+              // to a home-relative altitude before passing it to the navigation controller
+              _cmd.pos.alt -= ahrs.get_home().alt;
+              _cmd.pos.flags.relative_alt = true;
+              _cmd.pos.flags.terrain_alt = false;
+              break;
+        }
 
-      _posvel_cmd.vel_cmd.x = mavlink_msg_planck_posvel_cmd_msg_get_vx(mav_msg) * 100.;
-      _posvel_cmd.vel_cmd.y = mavlink_msg_planck_posvel_cmd_msg_get_vy(mav_msg) * 100.;
-      _posvel_cmd.vel_cmd.z = -mavlink_msg_planck_posvel_cmd_msg_get_vz(mav_msg) * 100.; //Ardu uses positive up
-      _posvel_cmd.yaw_cmd_cd = ToDeg(mavlink_msg_planck_posvel_cmd_msg_get_yaw(mav_msg)) * 100.;
-      _posvel_cmd.yaw_rate_cmd_cds = ToDeg(mavlink_msg_planck_posvel_cmd_msg_get_yaw_rate(mav_msg)) * 100.;
-      _posvel_cmd.use_yaw_rate = (bool)mavlink_msg_planck_posvel_cmd_msg_get_use_yaw_rate(mav_msg);
+        //velocity
+        _cmd.vel_cms.x = pc.vel[0] * 100.;
+        _cmd.vel_cms.y = pc.vel[1] * 100.;
+        _cmd.vel_cms.z = -pc.vel[2] * 100.; //Ardu uses positive up
+        
+        //acceleration
+        _cmd.accel_cmss.x = pc.acc[0] * 100.;
+        _cmd.accel_cmss.y = pc.acc[1] * 100.;
+        _cmd.accel_cmss.z = pc.acc[2] * 100.;
+        
+        //Attitude
+        _cmd.att_cd.x = pc.att[0] * 100.;
+        _cmd.att_cd.y = pc.att[1] * 100.;
+        _cmd.att_cd.z = pc.att[2] * 100.;
+    
+        //Determine which values are good
+        bool use_pos = pc.type_mask & 0x0007;
+        bool use_vel = pc.type_mask & 0x0038;
+        bool use_vz  = pc.type_mask & 0x0020;
+        bool use_acc = pc.type_mask & 0x01C0;
+        bool use_att = pc.type_mask & 0x0E00;
+        bool use_y   = pc.type_mask & 0x0800;
+        bool use_yr  = pc.type_mask & 0x1000;
+    
+        _cmd.is_yaw_rate = use_yr;
 
-      _new_command_available = true;
-      _last_cmd_type = POSVEL;
-      break;
+        //Determine the command type based on the typemask
+        //If position bits are set, this is a position command
+        if(use_pos && !use_vel && !use_vz && !use_acc && !use_att && !use_y && !use_yr)
+          _cmd.type = POSITION;
+          
+        //If position and velocity and yaw/yawrate are set, this is a posvel
+        if(use_pos && use_vel && !use_acc && !use_att && (use_y || use_yr))
+          _cmd.type = POSVEL;
+          
+        //If velocity and yaw/yawrate are set, this is a velocity command
+        if(!use_pos && use_vel && !use_acc && !use_att && (use_y || use_yr))
+          _cmd.type = VELOCITY;
+
+        //If attitude and vz and yaw/yawrate are set, this is an attitude command
+        if(!use_pos && !use_vel && use_vz && !use_acc && use_att && (use_y || use_yr))
+          _cmd.type = ATTITUDE;
+
+        //If accel and vz and yaw/yawrate are set, this is an accel command
+        if(!use_pos && !use_vel && use_vz && use_acc && !use_att && (use_y || use_yr))
+          _cmd.type = ACCEL;
+          
+        //Otherwise we don't know what this is
+        _cmd.type = NONE;
+
+        //This is a new command
+        _cmd.is_new = true;
+        break;
     }
 
     default:
@@ -222,98 +207,56 @@ void AC_Planck::stop_commanding(void)
     1);                    //uint8_t stop commanding,
 }
 
-//Returns true if the command is good, false if its too old
-bool AC_Planck::get_accel_cmd(float &accel_n,
-  float &accel_e,
-  float &yaw_cd,
-  float &vz_cms,
-  bool &is_yaw_rate)
+//Get an accel, yaw, z_rate command
+bool AC_Planck::get_accel_yaw_zrate_cmd(Vector3f &accel_cmss, float &yaw_cd, float &vz_cms, bool &is_yaw_rate)
 {
-  if((AP_HAL::millis() - _accel_cmd.timestamp_ms) >= _cmd_timeout_accel_ms)
-    return false;
-  
-  accel_n = _accel_cmd.accel_n;
-  accel_e = _accel_cmd.accel_e;
-  yaw_cd = _accel_cmd.yaw_cd;
-  is_yaw_rate = _accel_cmd.use_yaw_rate;
-  vz_cms = _accel_cmd.vz_cms;
-  
-  _new_command_available = false;
+  if(!_cmd.is_new) return false;
+  accel_cmss = _cmd.accel_cmss;
+  yaw_cd = _cmd.att_cd.z;
+  vz_cms = _cmd.vel_cms.z;
+  is_yaw_rate = _cmd.is_yaw_rate;
+  _cmd.is_new = false;
   return true;
 }
 
-//Returns true if the command is good, false if its too old
-bool AC_Planck::get_attitude_cmd(float &roll_cd,
-  float &pitch_cd,
-  float &yaw_cd,
-  bool &is_yaw_rate)
+//Get an attitude command
+bool AC_Planck::get_attitude_zrate_cmd(Vector3f &att_cd, float &vz_cms, bool &is_yaw_rate)
 {
-  if((AP_HAL::millis() - _attitude_cmd.timestamp_ms) >= _cmd_timeout_att_ms)
-    return false;
-  
-  roll_cd = _attitude_cmd.roll_cd;
-  pitch_cd = _attitude_cmd.pitch_cd;
-  yaw_cd = _attitude_cmd.yaw_cd;
-  is_yaw_rate = _attitude_cmd.use_yaw_rate;
-  
-  _new_command_available = false;
+  if(!_cmd.is_new) return false;
+  att_cd = _cmd.att_cd;
+  vz_cms = _cmd.vel_cms.z;
+  is_yaw_rate = _cmd.is_yaw_rate;
+  _cmd.is_new = false;
   return true;
 }
 
-//Returns true if the command is good, false if its too old
-bool AC_Planck::get_attitude_z_rate_cmd(float &roll_cd,
-  float &pitch_cd,
-  float &yaw_cd,
-  float &vz_cms,
-  bool &is_yaw_rate)
+//Get a velocity, yaw command
+bool AC_Planck::get_velocity_yaw_cmd(Vector3f &vel_cms, float &yaw_cd)
 {
-  if((AP_HAL::millis() - _attitude_cmd.timestamp_ms) >= _cmd_timeout_att_ms)
-    return false;
-  
-  get_attitude_cmd(roll_cd, pitch_cd, yaw_cd, is_yaw_rate);
-  
-  vz_cms = _attitude_cmd.vz_cms;
-  
-  _new_command_available = false;
+  if(!_cmd.is_new) return false;
+  vel_cms = _cmd.vel_cms;
+  yaw_cd = _cmd.att_cd.z;
+  _cmd.is_new = false;
   return true;
 }
 
-//Returns true if the command is good, false if its too old
-bool AC_Planck::get_velocity_cmd_cms(Vector3f &vel_cmd, float &yaw_cmd_cd)
+//Get a position command  
+bool AC_Planck::get_position_cmd(Location &loc)
 {
-  if((AP_HAL::millis() - _velocity_timestamp_ms) >= _cmd_timeout_vel_ms)
-    return false;
-  
-  vel_cmd = _velocity_cmd_cms;
-  _new_command_available = false;
+  if(!_cmd.is_new) return false;
+  loc = _cmd.pos;
+  _cmd.is_new = false;
   return true;
 }
 
-//Returns true if the command is new, false if its old
-bool AC_Planck::get_position_cmd(Location &loc_cmd)
+//Get a position, velocity, yaw command  
+bool AC_Planck::get_posvel_cmd(Location &loc, Vector3f &vel_cms, float &yaw_cd, bool &is_yaw_rate)
 {
-  if(!_new_command_available)
-    return false;
-
-  loc_cmd = _position_cmd;
-  
-  _new_command_available = false;
+  if(!_cmd.is_new) return false;
+  loc = _cmd.pos;
+  vel_cms = _cmd.vel_cms;
+  yaw_cd = _cmd.att_cd.z;
+  is_yaw_rate = _cmd.is_yaw_rate;
+  _cmd.is_new = false;
   return true;
-}
-
-//Returns true if the command is new, false if its old
-bool AC_Planck::get_posvel_cmd(Location &loc_cmd, Vector3f &vel_cmd, float &yaw_cmd_cd, float &yaw_rate_cmd_cds, bool &use_yaw_rate)
-{
-  if(!_new_command_available)
-    return false;
-
-  loc_cmd = _posvel_cmd.pos_cmd;
-  vel_cmd = _posvel_cmd.vel_cmd;
-  yaw_cmd_cd = _posvel_cmd.yaw_cmd_cd;
-  yaw_rate_cmd_cds = _posvel_cmd.yaw_rate_cmd_cds;
-  use_yaw_rate = _posvel_cmd.use_yaw_rate;
-  
-  _new_command_available = false;
-  return true;
-  
 }
