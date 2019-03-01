@@ -62,6 +62,8 @@ public:
   
   bool get_position_cmd(Location &loc_cmd);
   
+  bool get_posvel_cmd(Location &loc_cmd, Vector3f &vel_cmd, float &yaw_cmd_cd, float &yaw_rate_cmd_cds, bool &use_yaw_rate);
+  
   bool is_sending_accel_cmds() { return (_last_cmd_type == ACCEL); };
 
   bool is_sending_attitude_cmds() { return (_last_cmd_type == ATTITUDE); };
@@ -69,6 +71,8 @@ public:
   bool is_sending_velocity_cmds() { return (_last_cmd_type == VELOCITY); };
   
   bool is_sending_position_cmds() { return (_last_cmd_type == POSITION); };
+  
+  bool is_sending_posvel_cmds() { return (_last_cmd_type == POSVEL); };
   
   bool is_takeoff_complete() { return _status.takeoff_complete; };
   
@@ -114,7 +118,8 @@ private:
     ACCEL=0,
     ATTITUDE,
     VELOCITY,
-    POSITION
+    POSITION,
+    POSVEL
   }_last_cmd_type = ATTITUDE;
   
   Vector3f _velocity_cmd_cms;
@@ -122,7 +127,15 @@ private:
   uint32_t _velocity_timestamp_ms = 0;
   
   Location _position_cmd;
-  bool _position_cmd_stale = true;
+  
+  struct
+  {
+    Location pos_cmd;
+    Vector3f vel_cmd;
+    float yaw_cmd_cd;
+    float yaw_rate_cmd_cds;
+    bool use_yaw_rate;
+  }_posvel_cmd;
   
   mavlink_channel_t _chan = MAVLINK_COMM_1;
   

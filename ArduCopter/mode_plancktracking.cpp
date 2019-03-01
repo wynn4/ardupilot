@@ -82,7 +82,7 @@ void Copter::ModePlanckTracking::run() {
             if(!good_cmd) {
                 vel_cmd.x = vel_cmd.y = vel_cmd.z = 0;
                 yaw_cmd_cd = 0;
-                yaw_rate = false;
+                yaw_rate = true;
             }
             
             Copter::ModeGuided::set_velocity(vel_cmd, yaw_rate, yaw_cmd_cd);
@@ -91,6 +91,36 @@ void Copter::ModePlanckTracking::run() {
             Location loc_cmd;
             copter.planck_interface.get_position_cmd(loc_cmd);
             Copter::ModeGuided::set_destination(loc_cmd);
+        }
+        else if(copter.planck_interface.is_sending_posvel_cmds()){
+            Location loc_cmd;
+            Vector3f vel_cmd;
+            float yaw_cmd_cd;
+            float yaw_rate_cmd_cds;
+            bool is_yaw_rate = true;
+            
+            bool good_cmd = copter.planck_interface.get_posvel_cmd(
+              loc_cmd,
+              vel_cmd,
+              yaw_cmd_cd,
+              yaw_rate_cmd_cds,
+              is_yaw_rate);
+          
+            //Set a zero velocity if this is a bad command
+            if(!good_cmd) {
+                vel_cmd.x = vel_cmd.y = vel_cmd.z = 0;
+                yaw_rate_cmd_cds = 0
+                yaw_cmd_cd = 0;
+                Copter::ModeGuided::set_velocity(vel_cmd, yaw_rate, yaw_cmd_cd);
+            } else {
+              Copter::ModeGuided::set_destination_posvel(
+                loc_cmd,
+                vel_cmd,
+                !is_yaw_rate,
+                yaw_cmd_cd,
+                is_yaw_rate,
+                yaw_rate_cmd_cds);
+            }
         }
     }
     
