@@ -109,12 +109,12 @@ void Copter::ModePlanckTracking::run() {
             //Set a zero velocity if this is a bad command
             if(!good_cmd) {
                 vel_cmd.x = vel_cmd.y = vel_cmd.z = 0;
-                yaw_rate_cmd_cds = 0
+                yaw_rate_cmd_cds = 0;
                 yaw_cmd_cd = 0;
-                Copter::ModeGuided::set_velocity(vel_cmd, yaw_rate, yaw_cmd_cd);
+                Copter::ModeGuided::set_velocity(vel_cmd, yaw_rate_cmd_cds, yaw_cmd_cd);
             } else {
               Copter::ModeGuided::set_destination_posvel(
-                loc_cmd,
+                copter.pv_location_to_vector(loc_cmd),
                 vel_cmd,
                 !is_yaw_rate,
                 yaw_cmd_cd,
