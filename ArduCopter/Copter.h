@@ -637,7 +637,7 @@ private:
         Failsafe_Action_SmartRTL       = 3,
         Failsafe_Action_SmartRTL_Land  = 4,
         Failsafe_Action_Terminate      = 5,
-        Failsafe_Action_Planck_RTB     = 6
+        Failsafe_Action_Planck_Track_Land     = 6
     };
 
     static constexpr int8_t _failsafe_priorities[] = {
@@ -646,7 +646,7 @@ private:
                                                       Failsafe_Action_RTL,
                                                       Failsafe_Action_SmartRTL_Land,
                                                       Failsafe_Action_SmartRTL,
-                                                      Failsafe_Action_Planck_RTB,
+                                                      Failsafe_Action_Planck_Track_Land,
                                                       Failsafe_Action_None,
                                                       -1 // the priority list must end with a sentinel of -1
                                                      };
@@ -750,7 +750,7 @@ private:
     void set_mode_RTL_or_land_with_pause(mode_reason_t reason);
     void set_mode_SmartRTL_or_RTL(mode_reason_t reason);
     void set_mode_SmartRTL_or_land_with_pause(mode_reason_t reason);
-    void set_mode_planck_rtb_or_planck_land(mode_reason_t reason);
+    void set_mode_planck_track_or_planck_land(mode_reason_t reason);
     bool should_disarm_on_failsafe();
     void update_events();
 
