@@ -155,7 +155,7 @@ Copter::Mode *Copter::mode_from_mode_num(const uint8_t mode)
             break;
 #endif
 
-        case PLANCK_TAKEOFF:
+        case PLANCK_TRACK:
             ret = &mode_plancktracking;
             break;
 
