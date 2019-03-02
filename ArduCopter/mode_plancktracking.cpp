@@ -177,14 +177,25 @@ bool Copter::ModePlanckTracking::allows_arming(bool from_gcs) const
             copter.gcs().send_text(MAV_SEVERITY_CRITICAL,
               "Arm: Planck not tracking tag");
         }
-        
+        else
+        {
+            copter.gcs().send_text(MAV_SEVERITY_CRITICAL,
+              "Arm: Planck not ready for takeoff");
+        }
+  
+        return false;
+    }
+      
+    if((copter.arming.checks_to_perform & AP_Arming::ARMING_CHECK_ALL) ||
+       (copter.arming.checks_to_perform & AP_Arming::ARMING_CHECK_PLANCK_GPS))
+    {
         if(!copter.planck_interface.get_commbox_state())
         {
             copter.gcs().send_text(MAV_SEVERITY_CRITICAL,
               "Arm: Planck not tracking Commbox GPS");
+            return false;
         }
-        
-        return false;
     }
+        
     return true;
 }
