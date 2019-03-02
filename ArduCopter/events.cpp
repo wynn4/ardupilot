@@ -29,6 +29,8 @@ void Copter::failsafe_radio_on_event()
                 set_mode_SmartRTL_or_RTL(MODE_REASON_RADIO_FAILSAFE);
             } else if (g.failsafe_throttle == FS_THR_ENABLED_ALWAYS_SMARTRTL_OR_LAND) {
                 set_mode_SmartRTL_or_land_with_pause(MODE_REASON_RADIO_FAILSAFE);
+            } else if (g.failsafe_throttle == FS_THR_ENABLED_PLANCK_RTB) {
+                set_mode_planck_rtb_or_planck_land(MODE_REASON_RADIO_FAILSAFE);
             } else { // g.failsafe_throttle == FS_THR_ENABLED_ALWAYS_LAND
                 set_mode_land_with_pause(MODE_REASON_RADIO_FAILSAFE);
             }
@@ -81,6 +83,11 @@ void Copter::handle_battery_failsafe(const char *type_str, const int8_t action)
 #else
                 init_disarm_motors();
 #endif
+                break;
+            case Failsafe_Action_Planck_RTB:
+                set_mode_planck_rtb_or_planck_land(MODE_REASON_BATTERY_FAILSAFE);
+                break;
+
         }
     }
 }
@@ -133,6 +140,8 @@ void Copter::failsafe_gcs_check()
             set_mode_SmartRTL_or_RTL(MODE_REASON_GCS_FAILSAFE);
         } else if (g.failsafe_gcs == FS_GCS_ENABLED_ALWAYS_SMARTRTL_OR_LAND) {
             set_mode_SmartRTL_or_land_with_pause(MODE_REASON_GCS_FAILSAFE);
+        } else if (g.failsafe_gcs == FS_GCS_ENABLED_PLANCK_RTB) {
+            set_mode_planck_rtb_or_planck_land(MODE_REASON_GCS_FAILSAFE);
         } else { // g.failsafe_gcs == FS_GCS_ENABLED_ALWAYS_RTL
             set_mode_RTL_or_land_with_pause(MODE_REASON_GCS_FAILSAFE);
         }
@@ -200,7 +209,8 @@ void Copter::failsafe_terrain_on_event()
         mode_rtl.restart_without_terrain();
 #endif
     } else {
-        set_mode_RTL_or_land_with_pause(MODE_REASON_TERRAIN_FAILSAFE);
+        //set_mode_RTL_or_land_with_pause(MODE_REASON_TERRAIN_FAILSAFE);
+        set_mode_planck_rtb_or_planck_land(MODE_REASON_TERRAIN_FAILSAFE);
     }
 }
 
@@ -263,6 +273,27 @@ void Copter::set_mode_SmartRTL_or_RTL(mode_reason_t reason)
     } else {
         AP_Notify::events.failsafe_mode_change = 1;
     }
+}
+
+void Copter::set_mode_planck_rtb_or_planck_land(mode_reason_t reason)
+{
+  if(planck_interface.ready_for_land())
+  {
+      if(!set_mode(PLANCK_LAND, reason))
+      {
+          gcs().send_text(MAV_SEVERITY_WARNING, "Planck land unavailable");
+          set_mode(PLANCK_TRACK,reason);
+      }
+      else
+      {
+          AP_Notify::events.failsafe_mode_change = 1;
+      }
+  }
+  else
+  {
+      set_mode(PLANCK_TRACK,reason);
+      AP_Notify::events.failsafe_mode_change = 1;
+  }
 }
 
 bool Copter::should_disarm_on_failsafe() {
