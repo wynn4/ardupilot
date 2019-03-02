@@ -50,6 +50,8 @@ public:
   bool ready_for_takeoff(void) { return _is_status_ok() && _status.takeoff_ready; };
   bool ready_for_land(void) { return _is_status_ok() && _status.land_ready; };
   bool is_takeoff_complete() { return _status.takeoff_complete; };
+  bool get_commbox_state() { return _status.commbox_ok && _status.commbox_gps_ok && _status.tracking_commbox_gps; };
+  bool get_tag_tracking_state() { return _status.tracking_tag; };
 
   //command getters
   cmd_type get_cmd_type(void) { return _cmd.type; }
