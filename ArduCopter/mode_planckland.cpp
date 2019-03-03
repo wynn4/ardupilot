@@ -1,6 +1,10 @@
 #include "Copter.h"
 
 bool Copter::ModePlanckLand::init(bool ignore_checks){
+  
+    //If we are already landed this makes no sense
+    if(copter.ap.land_complete)
+      return false;
 
     if(!copter.planck_interface.ready_for_land()) {
       return false;

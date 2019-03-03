@@ -159,6 +159,10 @@ Copter::Mode *Copter::mode_from_mode_num(const uint8_t mode)
             ret = &mode_plancktracking;
             break;
 
+        case PLANCK_RTB:
+            ret = &mode_planckrtb;
+            break;
+
         case PLANCK_LAND:
             ret = &mode_planckland;
             break;
@@ -319,10 +323,14 @@ void Copter::exit_mode(Copter::Mode *&old_flightmode,
     //If transitioning from a planck flight mode to a non-planck-flight-mode,
     //tell planck to stop commanding.  Otherwise, let it keep commanding, as the
     //previous init() call likely started the commands
-    if(old_flightmode == &mode_auto || old_flightmode == &mode_planckland || old_flightmode == &mode_plancktracking)
+    if(old_flightmode == &mode_auto ||
+       old_flightmode == &mode_planckland ||
+       old_flightmode == &mode_plancktracking ||
+       old_flightmode == &mode_planckrtb)
     {
-        bool new_mode_is_a_planck_mode = (new_flightmode == &mode_planckland || new_flightmode == &mode_plancktracking);
-        if(!new_mode_is_a_planck_mode)
+        if(new_flightmode == &mode_planckland ||
+           new_flightmode == &mode_plancktracking ||
+           new_flightmode == &mode_planckrtb)
           planck_interface.stop_commanding();
     }
 }

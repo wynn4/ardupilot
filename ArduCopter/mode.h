@@ -1268,8 +1268,31 @@ public:
 
 protected:
     
-    const char *name() const override { return "PLANCKTAKEOFF"; }
-    const char *name4() const override { return "PLTO"; }
+    const char *name() const override { return "PLANCKTRACKING"; }
+    const char *name4() const override { return "PLTR"; }
+  
+    //if we want to land or transition to planck_land when we get back
+    bool _land_when_ready = false;
+};
+
+class ModePlanckRTB : public ModeGuided {
+
+public:
+
+    // inherit constructor
+    using Copter::ModeGuided::Mode;
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(bool from_gcs) const override { return false; }
+    bool is_autopilot() const override { return true; }
+
+protected:
+
+    const char *name() const override { return "PLANCKRTB"; }
+    const char *name4() const override { return "PRTB"; }
 };
 
 class ModePlanckLand : public ModeGuidedNoGPS {

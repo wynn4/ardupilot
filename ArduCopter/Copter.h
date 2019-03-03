@@ -1017,6 +1017,7 @@ private:
 #endif
 
     ModePlanckTracking mode_plancktracking;
+    ModePlanckRTB mode_planckrtb;
     ModePlanckLand mode_planckland;
 
     // mode.cpp
