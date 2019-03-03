@@ -376,21 +376,9 @@ void Copter::ModeAuto::payload_place_start()
 }
 
 //Planck start methods
-void Copter::ModeAuto::planck_takeoff_start(const Location& dest_loc)
+void Copter::ModeAuto::planck_takeoff_start(const float alt_target)
 {
     _mode = Auto_PlanckTakeoff;
-
-    // convert location to class
-    Location_Class dest(dest_loc);
-
-    // get altitude target
-    int32_t alt_target;
-    if (!dest.get_alt_cm(Location_Class::ALT_FRAME_ABOVE_HOME, alt_target)) {
-        // this failure could only happen if take-off alt was specified as an alt-above terrain and we have no terrain data
-        copter.Log_Write_Error(ERROR_SUBSYSTEM_TERRAIN, ERROR_CODE_MISSING_TERRAIN_DATA);
-        // fall back to altitude above current altitude
-        alt_target = copter.current_loc.alt + dest.alt;
-    }
 
     //Tell planck to takeoff
     copter.planck_interface.request_takeoff(alt_target);
@@ -1599,7 +1587,7 @@ void Copter::ModeAuto::do_RTL(void)
 //Planck do_ commands
 void Copter::ModeAuto::do_planck_takeoff(const AP_Mission::Mission_Command& cmd)
 {
-    planck_takeoff_start(cmd.content.location);
+    planck_takeoff_start(cmd.content.planck_takeoff.alt);
 }
 
 void Copter::ModeAuto::do_planck_rtb(const AP_Mission::Mission_Command& cmd)

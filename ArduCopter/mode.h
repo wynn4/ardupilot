@@ -288,7 +288,7 @@ public:
     void spline_start(const Vector3f& destination, bool stopped_at_start, AC_WPNav::spline_segment_end_type seg_end_type, const Vector3f& next_spline_destination);
     void spline_start(const Location_Class& destination, bool stopped_at_start, AC_WPNav::spline_segment_end_type seg_end_type, const Location_Class& next_destination);
     void nav_guided_start();
-    void planck_takeoff_start(const Location& dest_loc);
+    void planck_takeoff_start(const float alt);
     void planck_rtb_start();
 
     bool landing_gear_should_be_deployed() const override;
