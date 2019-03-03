@@ -191,6 +191,11 @@ public:
         float release_length;   // cable distance to unwind in meters, negative numbers to wind in cable
         float release_rate;     // release rate in meters/second
     };
+    
+    //Planck takeoff structure
+    struct PACKED Planck_Takeoff_Command{
+        float alt;              //Takeoff altitude
+    };
 
     union PACKED Content {
         // jump structure
@@ -255,6 +260,9 @@ public:
 
         // do-winch
         Winch_Command winch;
+        
+        // Planck commands
+        Planck_Takeoff_Command planck_takeoff;
 
         // location
         Location location;      // Waypoint location

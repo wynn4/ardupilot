@@ -207,6 +207,8 @@ enum AutoMode {
     Auto_NavGuided,
     Auto_Loiter,
     Auto_NavPayloadPlace,
+    Auto_PlanckTakeoff,
+    Auto_PlanckRTB
 };
 
 // Guided modes

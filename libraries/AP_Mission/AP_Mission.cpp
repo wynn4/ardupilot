@@ -870,6 +870,13 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
         cmd.content.winch.release_length = packet.param3;   // cable distance to unwind in meters, negative numbers to wind in cable
         cmd.content.winch.release_rate = packet.param4; // release rate in meters/second
         break;
+        
+    case MAV_CMD_NAV_PLANCK_TAKEOFF:
+        cmd.content.planck_takeoff.alt = packet.param1;  //takeoff altitude
+        break;
+
+    case MAV_CMD_NAV_PLANCK_RTB:
+        break;
 
     default:
         // unrecognised command

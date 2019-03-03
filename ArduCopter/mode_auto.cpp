@@ -97,6 +97,14 @@ void Copter::ModeAuto::run()
     case Auto_NavPayloadPlace:
         payload_place_run();
         break;
+        
+    case Auto_PlanckTakeoff:
+        planck_takeoff_run();
+        break;
+
+    case Auto_PlanckRTB:
+        planck_rtb_run();
+        break;
     }
 }
 
@@ -367,6 +375,41 @@ void Copter::ModeAuto::payload_place_start()
 
 }
 
+//Planck start methods
+void Copter::ModeAuto::planck_takeoff_start(const Location& dest_loc)
+{
+    _mode = Auto_PlanckTakeoff;
+
+    // convert location to class
+    Location_Class dest(dest_loc);
+
+    // get altitude target
+    int32_t alt_target;
+    if (!dest.get_alt_cm(Location_Class::ALT_FRAME_ABOVE_HOME, alt_target)) {
+        // this failure could only happen if take-off alt was specified as an alt-above terrain and we have no terrain data
+        copter.Log_Write_Error(ERROR_SUBSYSTEM_TERRAIN, ERROR_CODE_MISSING_TERRAIN_DATA);
+        // fall back to altitude above current altitude
+        alt_target = copter.current_loc.alt + dest.alt;
+    }
+
+    //Tell planck to takeoff
+    copter.planck_interface.request_takeoff(alt_target);
+
+    // initialise yaw
+    auto_yaw.set_mode(AUTO_YAW_HOLD);
+
+    // clear i term when we're taking off
+    set_throttle_takeoff();
+}
+
+void Copter::ModeAuto::planck_rtb_start()
+{
+    _mode = Auto_PlanckRTB;
+
+    //Tell planck to RTB 
+    copter.mode_plancktracking.init(true);
+}
+
 // start_command - this function will be called when the ap_mission lib wishes to start a new command
 bool Copter::ModeAuto::start_command(const AP_Mission::Mission_Command& cmd)
 {
@@ -532,6 +575,14 @@ bool Copter::ModeAuto::start_command(const AP_Mission::Mission_Command& cmd)
         do_winch(cmd);
         break;
 #endif
+
+    case MAV_CMD_NAV_PLANCK_TAKEOFF:
+      do_planck_takeoff(cmd);
+      break;
+
+    case MAV_CMD_NAV_PLANCK_RTB:
+      do_planck_rtb(cmd);
+      break;
 
     default:
         // do nothing with unrecognized MAVLink messages
@@ -715,6 +766,12 @@ bool Copter::ModeAuto::verify_command(const AP_Mission::Mission_Command& cmd)
     case MAV_CMD_DO_FENCE_ENABLE:
     case MAV_CMD_DO_WINCH:
         return true;
+        
+    case MAV_CMD_NAV_PLANCK_TAKEOFF:
+      return verify_planck_takeoff();
+
+    case MAV_CMD_NAV_PLANCK_RTB:
+      return verify_planck_rtb();
 
     default:
         // error message
@@ -1028,6 +1085,38 @@ void Copter::ModeAuto::payload_place_run_descend()
 {
     land_run_horizontal_control();
     land_run_vertical_control();
+}
+
+//Planck run methods
+void Copter::ModeAuto::planck_takeoff_run()
+{
+    // if not auto armed or motor interlock not enabled set throttle to zero and exit immediately
+    if (!motors->armed() || !ap.auto_armed || !motors->get_interlock()) {
+        // initialise wpnav targets
+        wp_nav->shift_wp_origin_to_current_pos();
+        // clear i term when we're taking off
+        set_throttle_takeoff();
+        return;
+    }
+
+#if FRAME_CONFIG == HELI_FRAME
+    // helicopters stay in landed state until rotor speed runup has finished
+    if (motors->rotor_runup_complete()) {
+        set_land_complete(false);
+    } else {
+        // initialise wpnav targets
+        wp_nav->shift_wp_origin_to_current_pos();
+    }
+#else
+    set_land_complete(false);
+#endif
+
+    copter.mode_plancktracking.run();
+}
+
+void Copter::ModeAuto::planck_rtb_run()
+{
+    copter.mode_plancktracking.run();
 }
 
 // terrain_adjusted_location: returns a Location with lat/lon from cmd
@@ -1507,6 +1596,17 @@ void Copter::ModeAuto::do_RTL(void)
     rtl_start();
 }
 
+//Planck do_ commands
+void Copter::ModeAuto::do_planck_takeoff(const AP_Mission::Mission_Command& cmd)
+{
+    planck_takeoff_start(cmd.content.location);
+}
+
+void Copter::ModeAuto::do_planck_rtb(const AP_Mission::Mission_Command& cmd)
+{
+    planck_rtb_start();
+}
+
 /********************************************************************************/
 //	Verify Nav (Must) commands
 /********************************************************************************/
@@ -1744,6 +1844,17 @@ bool Copter::ModeAuto::verify_loiter_time()
 bool Copter::ModeAuto::verify_RTL()
 {
     return (copter.mode_rtl.state_complete() && (copter.mode_rtl.state() == RTL_FinalDescent || copter.mode_rtl.state() == RTL_Land));
+}
+
+//Planck verify commands
+bool Copter::ModeAuto::verify_planck_takeoff()
+{
+    return copter.planck_interface.is_takeoff_complete();
+}
+
+bool Copter::ModeAuto::verify_planck_rtb()
+{
+    return copter.planck_interface.ready_for_land();
 }
 
 /********************************************************************************/
