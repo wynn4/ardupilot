@@ -395,7 +395,7 @@ void Copter::ModeAuto::planck_rtb_start()
     _mode = Auto_PlanckRTB;
 
     //Tell planck to RTB 
-    copter.mode_plancktracking.init(true);
+    copter.mode_planckrtb.init(true);
 }
 
 // start_command - this function will be called when the ap_mission lib wishes to start a new command
@@ -1104,7 +1104,7 @@ void Copter::ModeAuto::planck_takeoff_run()
 
 void Copter::ModeAuto::planck_rtb_run()
 {
-    copter.mode_plancktracking.run();
+    copter.mode_planckrtb.run();
 }
 
 // terrain_adjusted_location: returns a Location with lat/lon from cmd
