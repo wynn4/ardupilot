@@ -1837,12 +1837,19 @@ bool Copter::ModeAuto::verify_RTL()
 //Planck verify commands
 bool Copter::ModeAuto::verify_planck_takeoff()
 {
-    return copter.planck_interface.is_takeoff_complete();
+    if(copter.planck_interface.is_takeoff_complete())
+    {
+        //if there are more waypoints, tell planck to stop commanding
+        if(copter.mission.num_commands() > 1)
+          copter.planck_interface.stop_commanding();
+        return true;
+    }
+    return false;
 }
 
 bool Copter::ModeAuto::verify_planck_rtb()
 {
-    return copter.planck_interface.ready_for_land();
+    return ap.land_complete;
 }
 
 /********************************************************************************/
