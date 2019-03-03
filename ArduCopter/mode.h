@@ -1293,6 +1293,8 @@ protected:
 
     const char *name() const override { return "PLANCKRTB"; }
     const char *name4() const override { return "PRTB"; }
+    
+    bool _is_landing = false;
 };
 
 class ModePlanckLand : public ModeGuidedNoGPS {
