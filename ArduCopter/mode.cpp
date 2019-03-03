@@ -328,9 +328,9 @@ void Copter::exit_mode(Copter::Mode *&old_flightmode,
        old_flightmode == &mode_plancktracking ||
        old_flightmode == &mode_planckrtb)
     {
-        if(new_flightmode == &mode_planckland ||
-           new_flightmode == &mode_plancktracking ||
-           new_flightmode == &mode_planckrtb)
+        if(!(new_flightmode == &mode_planckland ||
+             new_flightmode == &mode_plancktracking ||
+             new_flightmode == &mode_planckrtb))
           planck_interface.stop_commanding();
     }
 }
