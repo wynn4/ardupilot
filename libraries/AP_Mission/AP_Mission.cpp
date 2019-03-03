@@ -131,6 +131,9 @@ void AP_Mission::resume()
 /// check mission starts with a takeoff command
 bool AP_Mission::starts_with_takeoff_cmd()
 {
+    if(starts_with_planck_takeoff_cmd())
+      return true;
+
     Mission_Command cmd = {};
     uint16_t cmd_index = _restart ? AP_MISSION_CMD_INDEX_NONE : _nav_cmd.index;
     if (cmd_index == AP_MISSION_CMD_INDEX_NONE) {
@@ -147,7 +150,6 @@ bool AP_Mission::starts_with_takeoff_cmd()
         // any of these are considered a takeoff command:
         case MAV_CMD_NAV_TAKEOFF:
         case MAV_CMD_NAV_TAKEOFF_LOCAL:
-        case MAV_CMD_NAV_PLANCK_TAKEOFF:
             return true;
         // any of these are considered "skippable" when determining if
         // we "start with a takeoff command"
@@ -155,6 +157,29 @@ bool AP_Mission::starts_with_takeoff_cmd()
             continue;
         default:
             return false;
+        }
+    }
+    return false;
+}
+
+/// check mission starts with a Planck takeoff command
+bool AP_Mission::starts_with_planck_takeoff_cmd()
+{
+    Mission_Command cmd = {};
+    uint16_t cmd_index = _restart ? AP_MISSION_CMD_INDEX_NONE : _nav_cmd.index;
+    if (cmd_index == AP_MISSION_CMD_INDEX_NONE) {
+        cmd_index = AP_MISSION_FIRST_REAL_COMMAND;
+    }
+
+    // check a maximum of 16 items, remembering that missions can have
+    // loops in them
+    for (uint8_t i=0; i<16; i++, cmd_index++) {
+        if (!get_next_nav_cmd(cmd_index, cmd)) {
+            return false;
+        }
+
+        if(cmd.id == MAV_CMD_NAV_PLANCK_TAKEOFF) {
+            return true;
         }
     }
     return false;

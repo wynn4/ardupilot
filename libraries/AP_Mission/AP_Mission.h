@@ -357,6 +357,9 @@ public:
     /// check mission starts with a takeoff command
     bool starts_with_takeoff_cmd();
 
+    /// check mission starts with a Planck takeoff command
+    bool starts_with_planck_takeoff_cmd();
+
     /// reset - reset mission to the first command
     void reset();
 

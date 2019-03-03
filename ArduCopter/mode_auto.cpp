@@ -30,6 +30,23 @@ bool Copter::ModeAuto::init(bool ignore_checks)
             gcs().send_text(MAV_SEVERITY_CRITICAL, "Auto: Missing Takeoff Cmd");
             return false;
         }
+        
+        // If the mission starts with a planck takeoff command, make sure
+        // that planck is ready for takeoff
+        if(copter.mission.starts_with_planck_takeoff_cmd()) {
+          if(!copter.planck_interface.ready_for_takeoff()) {
+            if(!copter.planck_interface.get_tag_tracking_state())
+              gcs().send_text(MAV_SEVERITY_CRITICAL, "Auto: Planck not tracking tag");
+            else
+              gcs().send_text(MAV_SEVERITY_CRITICAL, "Auto: Planck not ready for takeoff");
+            return false;
+          }
+
+          if(!copter.planck_interface.get_commbox_state()) {
+            gcs().send_text(MAV_SEVERITY_CRITICAL, "Auto: Planck Commbox GPS not ready");
+            return false;
+          }
+        }
 
         // stop ROI from carrying over from previous runs of the mission
         // To-Do: reset the yaw as part of auto_wp_start when the previous command was not a wp command to remove the need for this special ROI check
