@@ -319,7 +319,7 @@ void Copter::exit_mode(Copter::Mode *&old_flightmode,
     //If transitioning from a planck flight mode to a non-planck-flight-mode,
     //tell planck to stop commanding.  Otherwise, let it keep commanding, as the
     //previous init() call likely started the commands
-    if(old_flightmode == &mode_planckland || old_flightmode == &mode_plancktracking)
+    if(old_flightmode == &mode_auto || old_flightmode == &mode_planckland || old_flightmode == &mode_plancktracking)
     {
         bool new_mode_is_a_planck_mode = (new_flightmode == &mode_planckland || new_flightmode == &mode_plancktracking);
         if(!new_mode_is_a_planck_mode)
