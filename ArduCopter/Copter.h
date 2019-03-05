@@ -775,7 +775,9 @@ private:
     void send_pid_tuning(mavlink_channel_t chan);
     void gcs_data_stream_send(void);
     void gcs_check_input(void);
-
+    //Planck stateinfo
+    void send_planck_stateinfo(void);
+    
     // heli.cpp
     void heli_init();
     void check_dynamic_flight(void);

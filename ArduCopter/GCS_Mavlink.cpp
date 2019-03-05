@@ -2,6 +2,42 @@
 
 #include "GCS_Mavlink.h"
 
+//Scheduled task method
+void Copter::send_planck_stateinfo(void)
+{
+    for(int i=0; i<gcs().num_gcs(); ++i)
+    {
+      gcs().chan(i).send_planck_stateinfo();
+    }
+}
+
+//Sender
+bool GCS_MAVLINK_Copter::send_planck_stateinfo(void)
+{
+    if(!stream_trigger(STREAM_PLANCK))
+      return false;
+
+    CHECK_PAYLOAD_SIZE(PLANCK_STATEINFO);
+    copter.planck_interface.send_stateinfo(
+        chan,
+        copter.control_mode,
+        copter.motors->armed(),
+        !copter.ap.land_complete,
+        (
+            copter.failsafe.radio ||
+            copter.battery.has_failsafed() ||
+            copter.failsafe.gcs ||
+            copter.failsafe.ekf ||
+            copter.failsafe.terrain ||
+            copter.failsafe.adsb
+        ),
+        copter.ahrs,
+        copter.inertial_nav,
+        copter.current_loc,
+        copter.gps);
+    return true;
+}
+
 void Copter::gcs_send_heartbeat(void)
 {
     gcs().send_message(MSG_HEARTBEAT);
@@ -361,27 +397,11 @@ bool GCS_MAVLINK_Copter::try_send_message(enum ap_message id)
         copter.adsb.send_adsb_vehicle(chan);
 #endif
         break;
-        
-    case MSG_PLANCK_STATEINFO:
-        CHECK_PAYLOAD_SIZE(PLANCK_STATEINFO);
-        copter.planck_interface.send_stateinfo(chan,
-            copter.control_mode,
-            copter.motors->armed(),
-            !copter.ap.land_complete,
-            (
-                copter.failsafe.radio ||
-                copter.battery.has_failsafed() ||
-                copter.failsafe.gcs ||
-                copter.failsafe.ekf ||
-                copter.failsafe.terrain ||
-                copter.failsafe.adsb
-            ),
-            copter.ahrs,
-            copter.inertial_nav,
-            copter.current_loc,
-            copter.gps);
-        break;
 
+    //Don't handle PLANCK_STATEINFO here, as its handled by a separate process
+    case MSG_PLANCK_STATEINFO:
+      break;
+        
     default:
         return GCS_MAVLINK::try_send_message(id);
     }

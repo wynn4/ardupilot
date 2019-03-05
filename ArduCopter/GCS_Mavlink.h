@@ -9,6 +9,8 @@ class GCS_MAVLINK_Copter : public GCS_MAVLINK
 {
 
 public:
+  
+    bool send_planck_stateinfo();
 
 protected:
 
