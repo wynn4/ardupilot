@@ -131,6 +131,8 @@ void AC_Planck::send_stateinfo(const mavlink_channel_t &chan,
     Vector3f accel;
     ahrs.get_NavEKF2().getAccelNED(accel);
     
+    Vector3f gyro = ahrs.get_gyro_latest();
+    
     uint8_t status = 0x00;
     if(armed)
       status |= 0x01;
@@ -154,6 +156,9 @@ void AC_Planck::send_stateinfo(const mavlink_channel_t &chan,
       ahrs.roll,
       ahrs.pitch,
       ahrs.yaw,
+      gyro.x,
+      gyro.y,
+      gyro.z,
       accel.x,
       accel.y,
       accel.z,
