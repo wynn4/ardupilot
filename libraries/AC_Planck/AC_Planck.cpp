@@ -27,7 +27,7 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
      {
         mavlink_planck_cmd_msg_t pc;
         mavlink_msg_planck_cmd_msg_decode(mav_msg, &pc);
-        
+
         //position data
         _cmd.pos.lat = pc.lat;
         _cmd.pos.lng = pc.lon;
@@ -57,17 +57,17 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
         _cmd.vel_cms.x = pc.vel[0] * 100.;
         _cmd.vel_cms.y = pc.vel[1] * 100.;
         _cmd.vel_cms.z = pc.vel[2] * 100.;
-        
+
         //acceleration
         _cmd.accel_cmss.x = pc.acc[0] * 100.;
         _cmd.accel_cmss.y = pc.acc[1] * 100.;
         _cmd.accel_cmss.z = pc.acc[2] * 100.;
-        
+
         //Attitude
         _cmd.att_cd.x = pc.att[0] * 100.;
         _cmd.att_cd.y = pc.att[1] * 100.;
         _cmd.att_cd.z = pc.att[2] * 100.;
-    
+
         //Determine which values are good
         bool use_pos = (pc.type_mask & 0x0007) == 0x0007;
         bool use_vel = (pc.type_mask & 0x0038) == 0x0038;
@@ -76,18 +76,18 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
         bool use_att = (pc.type_mask & 0x0E00) == 0x0E00;
         bool use_y   = (pc.type_mask & 0x0800) == 0x0800;
         bool use_yr  = (pc.type_mask & 0x1000) == 0x1000;
-    
+
         _cmd.is_yaw_rate = use_yr;
 
         //Determine the command type based on the typemask
         //If position bits are set, this is a position command
         if(use_pos && !use_vel && !use_vz && !use_acc && !use_att && !use_y && !use_yr)
           _cmd.type = POSITION;
-          
+
         //If position and velocity and yaw/yawrate are set, this is a posvel
         else if(use_pos && use_vel && !use_acc && !use_att && (use_y || use_yr))
           _cmd.type = POSVEL;
-          
+
         //If velocity and yaw/yawrate are set, this is a velocity command
         else if(!use_pos && use_vel && !use_acc && !use_att && (use_y || use_yr))
           _cmd.type = VELOCITY;
@@ -99,7 +99,7 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
         //If accel and vz and yaw/yawrate are set, this is an accel command
         else if(!use_pos && !use_vel && use_vz && use_acc && !use_att && (use_y || use_yr))
           _cmd.type = ACCEL;
-          
+
         //Otherwise we don't know what this is
         else
           _cmd.type = NONE;
@@ -127,24 +127,24 @@ void AC_Planck::send_stateinfo(const mavlink_channel_t &chan,
 
   if(ahrs.get_NavEKF2().activeCores() > 0)
   {
-    
+
     Vector3f accel;
     ahrs.get_NavEKF2().getAccelNED(accel);
-    
+
     Vector3f gyro = ahrs.get_gyro_latest();
-    
+
     uint8_t status = 0x00;
     if(armed)
       status |= 0x01;
-    
+
     if(in_flight)
       status |= 0x02;
-    
+
     if(failsafe)
       status |= 0x04;
-    
+
     const Vector3f &vel = inertial_nav.get_velocity()/100;
-    
+
     mavlink_msg_planck_stateinfo_send(
       chan,
       PLANCK_SYS_ID,
@@ -175,42 +175,49 @@ void AC_Planck::send_stateinfo(const mavlink_channel_t &chan,
 void AC_Planck::request_takeoff(const float alt)
 {
   //Send a takeoff command message to planck
-  mavlink_msg_planck_start_takeoff_send(
+  mavlink_msg_planck_cmd_request_send(
     _chan,
     PLANCK_SYS_ID,         //uint8_t target_system
     PLANCK_CTRL_COMP_ID,   //uint8_t target_component,
-    alt);                  //float altitude
+    PLANCK_CMD_REQ_TAKEOFF,//uint8_t type
+    alt,                   //float param1
+    0,0,0,0,0);
 }
 
 void AC_Planck::request_rtb(const float alt, const float rate_up, const float rate_down)
 {
   //Send an RTL command message to planck
-  mavlink_msg_planck_start_return_to_landing_platform_send(
+  mavlink_msg_planck_cmd_request_send(
     _chan,
     PLANCK_SYS_ID,         //uint8_t target_system
     PLANCK_CTRL_COMP_ID,   //uint8_t target_component,
-    alt,                   //float altitude
-    rate_up,               //float rate_up
-    rate_down);            //float rate_down
+    PLANCK_CMD_REQ_RTB,    //uint8_t type
+    alt,                   //float param1
+    rate_up,               //float param2
+    rate_down,             //float param3
+    0,0,0);
 }
 
 void AC_Planck::request_land(const float descent_rate)
 {
   //Send a land command message to planck
-  mavlink_msg_planck_start_land_send(
+  mavlink_msg_planck_cmd_request_send(
     _chan,
     PLANCK_SYS_ID,         //uint8_t target_system
     PLANCK_CTRL_COMP_ID,   //uint8_t target_component,
-    descent_rate);         //float descent_rate
+    PLANCK_CMD_REQ_LAND,   //uint8_t type
+    descent_rate,          //float param1
+    0,0,0,0,0);
 }
 
 void AC_Planck::stop_commanding(void)
 {
-  mavlink_msg_planck_stop_controlling_send(
+  mavlink_msg_planck_cmd_request_send(
     _chan,
     PLANCK_SYS_ID,         //uint8_t target_system
     PLANCK_CTRL_COMP_ID,   //uint8_t target_component,
-    1);                    //uint8_t stop commanding,
+    PLANCK_CMD_REQ_STOP,   //uint8_t type
+    0,0,0,0,0,0);
 }
 
 //Get an accel, yaw, z_rate command
@@ -246,7 +253,7 @@ bool AC_Planck::get_velocity_yaw_cmd(Vector3f &vel_cms, float &yaw_cd)
   return true;
 }
 
-//Get a position command  
+//Get a position command
 bool AC_Planck::get_position_cmd(Location &loc)
 {
   if(!_cmd.is_new) return false;
@@ -255,7 +262,7 @@ bool AC_Planck::get_position_cmd(Location &loc)
   return true;
 }
 
-//Get a position, velocity, yaw command  
+//Get a position, velocity, yaw command
 bool AC_Planck::get_posvel_cmd(Location &loc, Vector3f &vel_cms, float &yaw_cd, bool &is_yaw_rate)
 {
   if(!_cmd.is_new) return false;
