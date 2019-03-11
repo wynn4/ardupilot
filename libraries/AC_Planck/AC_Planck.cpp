@@ -64,9 +64,9 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
         _cmd.accel_cmss.z = pc.acc[2] * 100.;
 
         //Attitude
-        _cmd.att_cd.x = pc.att[0] * 100.;
-        _cmd.att_cd.y = pc.att[1] * 100.;
-        _cmd.att_cd.z = pc.att[2] * 100.;
+        _cmd.att_cd.x = ToDeg(pc.att[0]) * 100.;
+        _cmd.att_cd.y = ToDeg(pc.att[1]) * 100.;
+        _cmd.att_cd.z = ToDeg(pc.att[2]) * 100.;
 
         //Determine which values are good
         bool use_pos = (pc.type_mask & 0x0007) == 0x0007;
