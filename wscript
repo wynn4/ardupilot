@@ -233,7 +233,7 @@ def _build_cmd_tweaks(bld):
 def _build_dynamic_sources(bld):
     bld(
         features='mavgen',
-        source='modules/mavlink/message_definitions/v1.0/ardupilotmega.xml',
+        source='modules/mavlink/message_definitions/v2.0/ardupilotmega.xml',
         output_dir='libraries/GCS_MAVLink/include/mavlink/v2.0/',
         name='mavlink',
         # this below is not ideal, mavgen tool should set this, but that's not
