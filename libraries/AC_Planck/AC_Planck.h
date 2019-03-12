@@ -77,9 +77,9 @@ private:
   struct
   {
     Location pos;
-    Vector3f vel_cms;
-    Vector3f accel_cmss;
-    Vector3f att_cd;
+    Vector3f vel_cms = Vector3f(0,0,0);
+    Vector3f accel_cmss = Vector3f(0,0,0);
+    Vector3f att_cd = Vector3f(0,0,0);
     bool is_yaw_rate = true;
     uint32_t timestamp_ms = 0;
     bool is_new = false;
