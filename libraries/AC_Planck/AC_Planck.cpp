@@ -184,7 +184,7 @@ void AC_Planck::request_takeoff(const float alt)
     0,0,0,0,0);
 }
 
-void AC_Planck::request_rtb(const float alt, const float rate_up, const float rate_down)
+void AC_Planck::request_rtb(const float alt, const float rate_up, const float rate_down, const float rate_xy)
 {
   //Send an RTL command message to planck
   mavlink_msg_planck_cmd_request_send(
@@ -195,7 +195,8 @@ void AC_Planck::request_rtb(const float alt, const float rate_up, const float ra
     alt,                   //float param1
     rate_up,               //float param2
     rate_down,             //float param3
-    0,0,0);
+    rate_xy,               //float param4
+    0,0);
 }
 
 void AC_Planck::request_land(const float descent_rate)

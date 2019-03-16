@@ -42,7 +42,7 @@ public:
 
   //Requesters to be sent to planck  
   void request_takeoff(const float alt);
-  void request_rtb(const float alt, const float rate_up, const float rate_down);
+  void request_rtb(const float alt, const float rate_up, const float rate_down, const float rate_xy);
   void request_land(const float descent_rate);
   void stop_commanding(void);
 
