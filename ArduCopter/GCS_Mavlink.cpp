@@ -1394,7 +1394,7 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
                 }
                 else
                 {
-                    copter.planck_interface.request_takeoff(pos_vector.z / 100.);
+                    copter.planck_interface.request_alt_change(pos_vector.z / 100.);
                     result = MAV_RESULT_ACCEPTED;
                 }
             }

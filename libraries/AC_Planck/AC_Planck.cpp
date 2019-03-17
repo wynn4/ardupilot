@@ -184,6 +184,18 @@ void AC_Planck::request_takeoff(const float alt)
     0,0,0,0,0);
 }
 
+void AC_Planck::request_alt_change(const float alt)
+{
+  //Send a takeoff command message to planck
+  mavlink_msg_planck_cmd_request_send(
+    _chan,
+    PLANCK_SYS_ID,            //uint8_t target_system
+    PLANCK_CTRL_COMP_ID,      //uint8_t target_component,
+    PLANCK_CMD_REQ_ALT_CHANGE,//uint8_t type
+    alt,                      //float param1
+    0,0,0,0,0);
+}
+
 void AC_Planck::request_rtb(const float alt, const float rate_up, const float rate_down, const float rate_xy)
 {
   //Send an RTL command message to planck
