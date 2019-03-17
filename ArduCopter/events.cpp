@@ -279,10 +279,10 @@ void Copter::set_mode_planck_track_or_planck_land(mode_reason_t reason)
 {
   if(planck_interface.ready_for_land())
   {
-      if(!set_mode(PLANCK_LAND, reason))
+      if(!set_mode(PLANCKLAND, reason))
       {
           gcs().send_text(MAV_SEVERITY_WARNING, "Planck land unavailable");
-          set_mode(PLANCK_TRACK,reason);
+          set_mode(PLANCKTRACK,reason);
       }
       else
       {
@@ -291,7 +291,7 @@ void Copter::set_mode_planck_track_or_planck_land(mode_reason_t reason)
   }
   else
   {
-      set_mode(PLANCK_TRACK,reason);
+      set_mode(PLANCKTRACK,reason);
       AP_Notify::events.failsafe_mode_change = 1;
   }
 }

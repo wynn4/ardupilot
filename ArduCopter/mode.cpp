@@ -155,15 +155,15 @@ Copter::Mode *Copter::mode_from_mode_num(const uint8_t mode)
             break;
 #endif
 
-        case PLANCK_TRACK:
+        case PLANCKTRACK:
             ret = &mode_plancktracking;
             break;
 
-        case PLANCK_RTB:
+        case PLANCKRTB:
             ret = &mode_planckrtb;
             break;
 
-        case PLANCK_LAND:
+        case PLANCKLAND:
             ret = &mode_planckland;
             break;
 
