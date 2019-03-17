@@ -1377,7 +1377,28 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
             copter.mode_guided.set_velocity(vel_vector, !yaw_ignore, yaw_cd, !yaw_rate_ignore, yaw_rate_cds, yaw_relative);
             result = MAV_RESULT_ACCEPTED;
         } else if (!pos_ignore && vel_ignore && acc_ignore) {
-            if (copter.mode_guided.set_destination(pos_vector, !yaw_ignore, yaw_cd, !yaw_rate_ignore, yaw_rate_cds, yaw_relative)) {
+            //If we get a MAV_FRAME_LOCAL_OFFSET_NED command with zero x/y and
+            //an altitude value, this is a "change altitude" command.  If in
+            //planck tracking, adjust the tracking altitude with a takeoff cmd
+            if(packet.coordinate_frame == MAV_FRAME_LOCAL_OFFSET_NED &&
+               packet.x == 0 && packet.y == 0 &&
+               copter.flightmode == &copter.mode_plancktracking)
+            {
+                //Don't allow if we don't have a good tag or commbox track or
+                //if we are not currently flying
+                if((!copter.planck_interface.get_tag_tracking_state() &&
+                    !copter.planck_interface.get_commbox_state()) ||
+                   copter.ap.land_complete)
+                {
+                    result = MAV_RESULT_FAILED;
+                }
+                else
+                {
+                    copter.planck_interface.request_takeoff(pos_vector.z / 100.);
+                    result = MAV_RESULT_ACCEPTED;
+                }
+            }
+            else if (copter.mode_guided.set_destination(pos_vector, !yaw_ignore, yaw_cd, !yaw_rate_ignore, yaw_rate_cds, yaw_relative)) {
                 result = MAV_RESULT_ACCEPTED;
             } else {
                 result = MAV_RESULT_FAILED;
