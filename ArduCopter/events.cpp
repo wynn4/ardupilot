@@ -108,7 +108,7 @@ void Copter::failsafe_gcs_check()
     last_gcs_update_ms = millis() - failsafe.last_heartbeat_ms;
 
     // check if all is well
-    if (last_gcs_update_ms < FS_GCS_TIMEOUT_MS) {
+    if (last_gcs_update_ms < FS_GCS_TIMEOUT_MS && planck_interface.get_commbox_state()) {
         // check for recovery from gcs failsafe
         if (failsafe.gcs) {
             failsafe_gcs_off_event();
