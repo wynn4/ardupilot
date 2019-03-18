@@ -116,6 +116,7 @@ enum control_mode_t {
     PLANCKTRACK  = 24,  //Planck-specific tracking mode, used in takeoff and tracking
     PLANCKRTB    = 25,  //Planck-specific RTB mode
     PLANCKLAND  =  26,  //Planck-specific land mode
+    PLANCKWINGMAN = 27, //Planck-specific wingman mode
 };
 
 enum mode_reason_t {

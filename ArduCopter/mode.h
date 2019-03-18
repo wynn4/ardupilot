@@ -1316,3 +1316,28 @@ protected:
     const char *name() const override { return "PLANCKLAND"; }
     const char *name4() const override { return "PLND"; }
 };
+
+class ModePlanckWingman : public ModeGuided {
+
+public:
+
+    // inherit constructor
+    using Copter::ModeGuided::Mode;
+
+    bool init(bool ignore_checks) override;
+    void run() override;
+    bool requires_GPS() const override { return true; }
+    bool has_manual_throttle() const override { return false; }
+    bool allows_arming(bool from_gcs) const override { return false; }
+    bool is_autopilot() const override { return true; }
+
+protected:
+
+    const char *name() const override { return "PLANCKWINGMAN"; }
+    const char *name4() const override { return "PLWM"; }
+  
+private:  
+
+    int64_t _next_req_send_t_ms = 0; //For sending new targets at a fixed rate
+    const int8_t _send_rate_ms = 100; //10hz, 100ms
+};

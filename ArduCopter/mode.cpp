@@ -167,6 +167,10 @@ Copter::Mode *Copter::mode_from_mode_num(const uint8_t mode)
             ret = &mode_planckland;
             break;
 
+        case PLANCKWINGMAN:
+            ret = &mode_planckwingman;
+            break;
+
         default:
             break;
     }

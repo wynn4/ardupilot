@@ -45,6 +45,7 @@ public:
   void request_alt_change(const float alt);
   void request_rtb(const float alt, const float rate_up, const float rate_down, const float rate_xy);
   void request_land(const float descent_rate);
+  void request_wingman(const bool use_current_pos, const Vector3f rel_cmd = Vector3f(0,0,0), const bool is_NED = true, const float yaw = 0, const bool is_rate = false);
   void stop_commanding(void);
 
   //planck status getters

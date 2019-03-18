@@ -223,6 +223,35 @@ void AC_Planck::request_land(const float descent_rate)
     0,0,0,0,0);
 }
 
+//Sends a REQ_WINGMAN command to planck, specifying the offset position.  if
+//is_rate is true, the rel_cmd_NED is interpreted as a velocity command by which
+//the relative setpoint should be moved and the yaw should be adjusted.  If
+//NED is false, positions are generated relative to the heading of the base
+void AC_Planck::request_wingman(const bool use_current_pos, const Vector3f rel_cmd, const bool is_NED, const float yaw, const bool is_rate)
+{
+  //Bitmask the type of command we're sending:
+  // bit 1: use current position
+  // bit 2: accept command as a rate
+  // bit 3: use base-heading-frame (not NED)
+  uint8_t cmd_opts= 0;
+  if(use_current_pos) cmd_opts |= 0x01;
+  if(!is_rate)        cmd_opts |= 0x02;
+  if(!is_NED)         cmd_opts |= 0x04;
+
+  //Send a wingman command message to planck
+  mavlink_msg_planck_cmd_request_send(
+    _chan,
+    PLANCK_SYS_ID,         //uint8_t target_system
+    PLANCK_CTRL_COMP_ID,   //uint8_t target_component,
+    PLANCK_CMD_REQ_WINGMAN,//uint8_t type
+    (float)cmd_opts,       //float param1
+    rel_cmd.x,             //float param2
+    rel_cmd.y,             //float param3
+    rel_cmd.z,             //float param4
+    yaw,                   //float param5
+    0);                    //float param6
+}
+
 void AC_Planck::stop_commanding(void)
 {
   mavlink_msg_planck_cmd_request_send(
