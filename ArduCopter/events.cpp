@@ -30,7 +30,7 @@ void Copter::failsafe_radio_on_event()
             } else if (g.failsafe_throttle == FS_THR_ENABLED_ALWAYS_SMARTRTL_OR_LAND) {
                 set_mode_SmartRTL_or_land_with_pause(MODE_REASON_RADIO_FAILSAFE);
             } else if (g.failsafe_throttle == FS_THR_ENABLED_PLANCK_TRACK_PLANCK_LAND) {
-                set_mode_planck_track_or_planck_land(MODE_REASON_RADIO_FAILSAFE);
+                set_mode_planck_RTB_or_planck_land(MODE_REASON_RADIO_FAILSAFE);
             } else { // g.failsafe_throttle == FS_THR_ENABLED_ALWAYS_LAND
                 set_mode_land_with_pause(MODE_REASON_RADIO_FAILSAFE);
             }
@@ -85,7 +85,7 @@ void Copter::handle_battery_failsafe(const char *type_str, const int8_t action)
 #endif
                 break;
             case Failsafe_Action_Planck_Track_Land:
-                set_mode_planck_track_or_planck_land(MODE_REASON_BATTERY_FAILSAFE);
+                set_mode_planck_RTB_or_planck_land(MODE_REASON_BATTERY_FAILSAFE);
                 break;
 
         }
@@ -141,7 +141,7 @@ void Copter::failsafe_gcs_check()
         } else if (g.failsafe_gcs == FS_GCS_ENABLED_ALWAYS_SMARTRTL_OR_LAND) {
             set_mode_SmartRTL_or_land_with_pause(MODE_REASON_GCS_FAILSAFE);
         } else if (g.failsafe_gcs == FS_GCS_ENABLED_PLANCK_TRACK_PLANCK_LAND) {
-            set_mode_planck_track_or_planck_land(MODE_REASON_GCS_FAILSAFE);
+            set_mode_planck_RTB_or_planck_land(MODE_REASON_GCS_FAILSAFE);
         } else { // g.failsafe_gcs == FS_GCS_ENABLED_ALWAYS_RTL
             set_mode_RTL_or_land_with_pause(MODE_REASON_GCS_FAILSAFE);
         }
@@ -210,7 +210,7 @@ void Copter::failsafe_terrain_on_event()
 #endif
     } else {
         //set_mode_RTL_or_land_with_pause(MODE_REASON_TERRAIN_FAILSAFE);
-        set_mode_planck_track_or_planck_land(MODE_REASON_TERRAIN_FAILSAFE);
+        set_mode_planck_RTB_or_planck_land(MODE_REASON_TERRAIN_FAILSAFE);
     }
 }
 
@@ -275,14 +275,14 @@ void Copter::set_mode_SmartRTL_or_RTL(mode_reason_t reason)
     }
 }
 
-void Copter::set_mode_planck_track_or_planck_land(mode_reason_t reason)
+void Copter::set_mode_planck_RTB_or_planck_land(mode_reason_t reason)
 {
   if(planck_interface.ready_for_land())
   {
       if(!set_mode(PLANCKLAND, reason))
       {
           gcs().send_text(MAV_SEVERITY_WARNING, "Planck land unavailable");
-          set_mode(PLANCKTRACK,reason);
+          set_mode(PLANCKRTB,reason);
       }
       else
       {
@@ -291,7 +291,7 @@ void Copter::set_mode_planck_track_or_planck_land(mode_reason_t reason)
   }
   else
   {
-      set_mode(PLANCKTRACK,reason);
+      set_mode(PLANCKRTB,reason);
       AP_Notify::events.failsafe_mode_change = 1;
   }
 }
