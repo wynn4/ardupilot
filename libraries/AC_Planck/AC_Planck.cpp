@@ -235,7 +235,7 @@ void AC_Planck::request_wingman(const bool use_current_pos, const Vector3f rel_c
   // bit 3: use base-heading-frame (not NED)
   uint8_t cmd_opts= 0;
   if(use_current_pos) cmd_opts |= 0x01;
-  if(!is_rate)        cmd_opts |= 0x02;
+  if(is_rate)         cmd_opts |= 0x02;
   if(!is_NED)         cmd_opts |= 0x04;
 
   //Send a wingman command message to planck
