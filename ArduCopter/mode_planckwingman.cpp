@@ -28,8 +28,8 @@ void Copter::ModePlanckWingman::run() {
     if( !copter.failsafe.radio ) {
 
       //Get position/yaw offsets from user as necessary
-      float x_rate = channel_roll->norm_input_dz() * copter.wp_nav->get_speed_xy()/100.;
-      float y_rate = channel_pitch->norm_input_dz() * copter.wp_nav->get_speed_xy()/100.;
+      float x_rate = -channel_pitch->norm_input_dz() * copter.wp_nav->get_speed_xy()/100.;
+      float y_rate = channel_roll->norm_input_dz() * copter.wp_nav->get_speed_xy()/100.;
       
       //Turn x/y rates into N/E rates
       float N_rate = (x_rate*copter.ahrs.cos_yaw() - y_rate*copter.ahrs.sin_yaw());
@@ -37,7 +37,7 @@ void Copter::ModePlanckWingman::run() {
       
       float yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
       float z_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
-      
+
       Vector3f rate_NED(N_rate, E_rate, z_rate); //NED
       
       //Send a command request if any of our rates are non-zero
