@@ -330,11 +330,13 @@ void Copter::exit_mode(Copter::Mode *&old_flightmode,
     if(old_flightmode == &mode_auto ||
        old_flightmode == &mode_planckland ||
        old_flightmode == &mode_plancktracking ||
-       old_flightmode == &mode_planckrtb)
+       old_flightmode == &mode_planckrtb ||
+       old_flightmode == &mode_planckwingman)
     {
         if(!(new_flightmode == &mode_planckland ||
              new_flightmode == &mode_plancktracking ||
-             new_flightmode == &mode_planckrtb))
+             new_flightmode == &mode_planckrtb ||
+             new_flightmode == &mode_planckwingman))
           planck_interface.stop_commanding();
     }
 }

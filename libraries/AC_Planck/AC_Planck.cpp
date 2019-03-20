@@ -186,14 +186,19 @@ void AC_Planck::request_takeoff(const float alt)
 
 void AC_Planck::request_alt_change(const float alt)
 {
-  //Send a takeoff command message to planck
+  //Only altitude is valid
+  uint8_t valid = 0b00000100;
   mavlink_msg_planck_cmd_request_send(
     _chan,
-    PLANCK_SYS_ID,            //uint8_t target_system
-    PLANCK_CTRL_COMP_ID,      //uint8_t target_component,
-    PLANCK_CMD_REQ_ALT_CHANGE,//uint8_t type
-    alt,                      //float param1
-    0,0,0,0,0);
+    PLANCK_SYS_ID,
+    PLANCK_CTRL_COMP_ID,
+    PLANCK_CMD_REQ_MOVE_TARGET,
+    (float)valid,     //param1
+    0,                //param2
+    0,                //param3
+    alt,              //param4
+    0,                //param5
+    false);           //param6
 }
 
 void AC_Planck::request_rtb(const float alt, const float rate_up, const float rate_down, const float rate_xy)
@@ -223,33 +228,22 @@ void AC_Planck::request_land(const float descent_rate)
     0,0,0,0,0);
 }
 
-//Sends a REQ_WINGMAN command to planck, specifying the offset position.  if
-//is_rate is true, the rel_cmd_NED is interpreted as a velocity command by which
-//the relative setpoint should be moved and the yaw should be adjusted.  If
-//NED is false, positions are generated relative to the heading of the base
-void AC_Planck::request_wingman(const bool use_current_pos, const Vector3f rel_cmd, const bool is_NED, const float yaw, const bool is_rate)
+//Move the current tracking target, either to an absolute offset or by a rate
+void AC_Planck::request_move_target(const Vector3f offset_cmd_NED, const float yaw_cmd_NED, const bool is_rate)
 {
-  //Bitmask the type of command we're sending:
-  // bit 1: use current position
-  // bit 2: accept command as a rate
-  // bit 3: use base-heading-frame (not NED)
-  uint8_t cmd_opts= 0;
-  if(use_current_pos) cmd_opts |= 0x01;
-  if(is_rate)         cmd_opts |= 0x02;
-  if(!is_NED)         cmd_opts |= 0x04;
-
-  //Send a wingman command message to planck
+  //all directions and yaw are valid
+  uint8_t valid = 0b00001111;
   mavlink_msg_planck_cmd_request_send(
     _chan,
-    PLANCK_SYS_ID,         //uint8_t target_system
-    PLANCK_CTRL_COMP_ID,   //uint8_t target_component,
-    PLANCK_CMD_REQ_WINGMAN,//uint8_t type
-    (float)cmd_opts,       //float param1
-    rel_cmd.x,             //float param2
-    rel_cmd.y,             //float param3
-    rel_cmd.z,             //float param4
-    yaw,                   //float param5
-    0);                    //float param6
+    PLANCK_SYS_ID,
+    PLANCK_CTRL_COMP_ID,
+    PLANCK_CMD_REQ_MOVE_TARGET,
+    (float)valid,     //param1
+    offset_cmd_NED.x, //param2
+    offset_cmd_NED.y, //param3
+    offset_cmd_NED.z, //param4
+    yaw_cmd_NED,      //param5
+    is_rate);         //param6
 }
 
 void AC_Planck::stop_commanding(void)
