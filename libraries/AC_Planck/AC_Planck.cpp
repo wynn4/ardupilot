@@ -229,7 +229,7 @@ void AC_Planck::request_land(const float descent_rate)
 }
 
 //Move the current tracking target, either to an absolute offset or by a rate
-void AC_Planck::request_move_target(const Vector3f offset_cmd_NED, const float yaw_cmd_NED, const bool is_rate)
+void AC_Planck::request_move_target(const Vector3f offset_cmd_NED, const bool is_rate)
 {
   //all directions and are valid
   uint8_t valid = 0b00000111;

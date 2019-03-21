@@ -10,7 +10,7 @@ bool Copter::ModePlanckWingman::init(bool ignore_checks){
     if(copter.mode_plancktracking.init(ignore_checks)) {
 
       //And command a zero-rate, telling planck to maintain current relative position 
-      copter.planck_interface.request_move_target(Vector3f(0,0,0),0,true);
+      copter.planck_interface.request_move_target(Vector3f(0,0,0),true);
 
       //Make sure we don't immediately send a different command
       _next_req_send_t_ms = millis() + _send_rate_ms;
@@ -34,15 +34,13 @@ void Copter::ModePlanckWingman::run() {
       //Turn x/y rates into N/E rates
       float N_rate = (x_rate*copter.ahrs.cos_yaw() - y_rate*copter.ahrs.sin_yaw());
       float E_rate = (x_rate*copter.ahrs.sin_yaw() + y_rate*copter.ahrs.cos_yaw());
-      
-      float yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
       float z_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
 
       Vector3f rate_NED(N_rate, E_rate, z_rate); //NED
       
       //Send a command request if any of our rates are non-zero
-      if(N_rate != 0 || E_rate != 0 || yaw_rate != 0 || z_rate !=0) {
-        copter.planck_interface.request_move_target(rate_NED, yaw_rate, true);
+      if(N_rate != 0 || E_rate != 0 || z_rate !=0) {
+        copter.planck_interface.request_move_target(rate_NED, true);
       }
     }
 

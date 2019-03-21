@@ -45,7 +45,7 @@ public:
   void request_alt_change(const float alt);
   void request_rtb(const float alt, const float rate_up, const float rate_down, const float rate_xy);
   void request_land(const float descent_rate);
-  void request_move_target(const Vector3f offset_cmd_NED, const float yaw_cmd_NED, const bool is_rate = false);
+  void request_move_target(const Vector3f offset_cmd_NED, const bool is_rate = false);
   void stop_commanding(void);
 
   //planck status getters
