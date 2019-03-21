@@ -66,13 +66,13 @@ public:
   bool get_attitude_zrate_cmd(Vector3f &att_cd, float &vz_cms, bool &is_yaw_rate);
 
   //Get a velocity, yaw command
-  bool get_velocity_yaw_cmd(Vector3f &vel_cms, float &yaw_cd);
+  bool get_velocity_cmd(Vector3f &vel_cms);
 
   //Get a position command  
   bool get_position_cmd(Location &loc);
 
   //Get a position, velocity, yaw command  
-  bool get_posvel_cmd(Location &loc, Vector3f &vel_cms, float &yaw_cd, bool &is_yaw_rate);
+  bool get_posvel_cmd(Location &loc, Vector3f &vel_cms);
   
 private:
 

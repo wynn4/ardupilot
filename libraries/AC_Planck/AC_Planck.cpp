@@ -81,23 +81,23 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
 
         //Determine the command type based on the typemask
         //If position bits are set, this is a position command
-        if(use_pos && !use_vel && !use_vz && !use_acc && !use_att && !use_y && !use_yr)
+        if(use_pos && !use_vel)
           _cmd.type = POSITION;
 
-        //If position and velocity and yaw/yawrate are set, this is a posvel
-        else if(use_pos && use_vel && !use_acc && !use_att && (use_y || use_yr))
+        //If position and velocity are set, this is a posvel
+        else if(use_pos && use_vel)
           _cmd.type = POSVEL;
 
-        //If velocity and yaw/yawrate are set, this is a velocity command
-        else if(!use_pos && use_vel && !use_acc && !use_att && (use_y || use_yr))
+        //If velocity is set, this is a velocity command
+        else if(use_vel)
           _cmd.type = VELOCITY;
 
         //If attitude and vz and yaw/yawrate are set, this is an attitude command
-        else if(!use_pos && !use_vel && use_vz && !use_acc && use_att && (use_y || use_yr))
+        else if(use_vz && !use_acc && use_att && (use_y || use_yr))
           _cmd.type = ATTITUDE;
 
         //If accel and vz and yaw/yawrate are set, this is an accel command
-        else if(!use_pos && !use_vel && use_vz && use_acc && !use_att && (use_y || use_yr))
+        else if(use_vz && use_acc && !use_att && (use_y || use_yr))
           _cmd.type = ACCEL;
 
         //Otherwise we don't know what this is
@@ -231,8 +231,8 @@ void AC_Planck::request_land(const float descent_rate)
 //Move the current tracking target, either to an absolute offset or by a rate
 void AC_Planck::request_move_target(const Vector3f offset_cmd_NED, const float yaw_cmd_NED, const bool is_rate)
 {
-  //all directions and yaw are valid
-  uint8_t valid = 0b00001111;
+  //all directions and are valid
+  uint8_t valid = 0b00000111;
   mavlink_msg_planck_cmd_request_send(
     _chan,
     PLANCK_SYS_ID,
@@ -242,8 +242,8 @@ void AC_Planck::request_move_target(const Vector3f offset_cmd_NED, const float y
     offset_cmd_NED.x, //param2
     offset_cmd_NED.y, //param3
     offset_cmd_NED.z, //param4
-    yaw_cmd_NED,      //param5
-    is_rate);         //param6
+    is_rate,          //param5
+    0);               //param6
 }
 
 void AC_Planck::stop_commanding(void)
@@ -280,11 +280,10 @@ bool AC_Planck::get_attitude_zrate_cmd(Vector3f &att_cd, float &vz_cms, bool &is
 }
 
 //Get a velocity, yaw command
-bool AC_Planck::get_velocity_yaw_cmd(Vector3f &vel_cms, float &yaw_cd)
+bool AC_Planck::get_velocity_cmd(Vector3f &vel_cms)
 {
   if(!_cmd.is_new) return false;
   vel_cms = _cmd.vel_cms;
-  yaw_cd = _cmd.att_cd.z;
   _cmd.is_new = false;
   return true;
 }
@@ -298,14 +297,12 @@ bool AC_Planck::get_position_cmd(Location &loc)
   return true;
 }
 
-//Get a position, velocity, yaw command
-bool AC_Planck::get_posvel_cmd(Location &loc, Vector3f &vel_cms, float &yaw_cd, bool &is_yaw_rate)
+//Get a position, velocity cmd
+bool AC_Planck::get_posvel_cmd(Location &loc, Vector3f &vel_cms)
 {
   if(!_cmd.is_new) return false;
   loc = _cmd.pos;
   vel_cms = _cmd.vel_cms;
-  yaw_cd = _cmd.att_cd.z;
-  is_yaw_rate = _cmd.is_yaw_rate;
   _cmd.is_new = false;
   return true;
 }
