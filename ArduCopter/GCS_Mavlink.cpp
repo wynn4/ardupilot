@@ -1379,10 +1379,12 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
         } else if (!pos_ignore && vel_ignore && acc_ignore) {
             //If we get a MAV_FRAME_LOCAL_OFFSET_NED command with zero x/y and
             //an altitude value, this is a "change altitude" command.  If in
-            //planck tracking, adjust the tracking altitude with a takeoff cmd
+            //planck tracking or planck_wingman, adjust the tracking altitude
+            //with a new target shift cmd
             if(packet.coordinate_frame == MAV_FRAME_LOCAL_OFFSET_NED &&
                packet.x == 0 && packet.y == 0 &&
-               copter.flightmode == &copter.mode_plancktracking)
+               (copter.flightmode == &copter.mode_plancktracking ||
+                copter.flightmode == &copter.mode_planckwingman))
             {
                 //Don't allow if we don't have a good tag or commbox track or
                 //if we are not currently flying
