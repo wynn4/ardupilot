@@ -122,6 +122,10 @@ void Copter::ModeAuto::run()
     case Auto_PlanckRTB:
         planck_rtb_run();
         break;
+
+    case Auto_PlanckWingman:
+        planck_wingman_run();
+        break;
     }
 }
 
@@ -415,6 +419,14 @@ void Copter::ModeAuto::planck_rtb_start()
     copter.mode_planckrtb.init(true);
 }
 
+void Copter::ModeAuto::planck_wingman_start()
+{
+    _mode = Auto_PlanckWingman;
+
+    //Tell planck to start tracking
+    copter.mode_planckwingman.init(true);
+}
+
 // start_command - this function will be called when the ap_mission lib wishes to start a new command
 bool Copter::ModeAuto::start_command(const AP_Mission::Mission_Command& cmd)
 {
@@ -587,6 +599,10 @@ bool Copter::ModeAuto::start_command(const AP_Mission::Mission_Command& cmd)
 
     case MAV_CMD_NAV_PLANCK_RTB:
       do_planck_rtb(cmd);
+      break;
+
+    case MAV_CMD_NAV_PLANCK_WINGMAN:
+      do_planck_wingman(cmd);
       break;
 
     default:
@@ -777,6 +793,9 @@ bool Copter::ModeAuto::verify_command(const AP_Mission::Mission_Command& cmd)
 
     case MAV_CMD_NAV_PLANCK_RTB:
       return verify_planck_rtb();
+
+    case MAV_CMD_NAV_PLANCK_WINGMAN:
+      return verify_planck_wingman();
 
     default:
         // error message
@@ -1122,6 +1141,11 @@ void Copter::ModeAuto::planck_takeoff_run()
 void Copter::ModeAuto::planck_rtb_run()
 {
     copter.mode_planckrtb.run();
+}
+
+void Copter::ModeAuto::planck_wingman_run()
+{
+    copter.mode_planckwingman.run();
 }
 
 // terrain_adjusted_location: returns a Location with lat/lon from cmd
@@ -1612,6 +1636,18 @@ void Copter::ModeAuto::do_planck_rtb(const AP_Mission::Mission_Command& cmd)
     planck_rtb_start();
 }
 
+void Copter::ModeAuto::do_planck_wingman(const AP_Mission::Mission_Command& cmd)
+{
+    planck_wingman_start();
+    copter.planck_interface.request_move_target(
+      Vector3f(
+        cmd.content.planck_wingman.x,
+        cmd.content.planck_wingman.y,
+        cmd.content.planck_wingman.z
+      )
+    );
+}
+
 /********************************************************************************/
 //	Verify Nav (Must) commands
 /********************************************************************************/
@@ -1867,6 +1903,11 @@ bool Copter::ModeAuto::verify_planck_takeoff()
 bool Copter::ModeAuto::verify_planck_rtb()
 {
     return ap.land_complete;
+}
+
+bool Copter::ModeAuto::verify_planck_wingman()
+{
+    return copter.planck_interface.at_location();
 }
 
 /********************************************************************************/

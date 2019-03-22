@@ -197,6 +197,13 @@ public:
         float alt;              //Takeoff altitude
     };
 
+    //Planck wingman structure 
+    struct PACKED Planck_Wingman_Command{
+        float x;
+        float y;
+        float z;
+    };
+
     union PACKED Content {
         // jump structure
         Jump_Command jump;
@@ -263,6 +270,7 @@ public:
         
         // Planck commands
         Planck_Takeoff_Command planck_takeoff;
+        Planck_Wingman_Command planck_wingman;
 
         // location
         Location location;      // Waypoint location

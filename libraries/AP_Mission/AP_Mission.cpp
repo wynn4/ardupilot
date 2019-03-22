@@ -325,7 +325,8 @@ bool AP_Mission::is_nav_cmd(const Mission_Command& cmd)
     // NAV commands all have ids below MAV_CMD_NAV_LAST except NAV_SET_YAW_SPEED
     // and planck commands
     return (cmd.id <= MAV_CMD_NAV_LAST || cmd.id == MAV_CMD_NAV_SET_YAW_SPEED ||
-      cmd.id == MAV_CMD_NAV_PLANCK_RTB || cmd.id == MAV_CMD_NAV_PLANCK_TAKEOFF);
+      cmd.id == MAV_CMD_NAV_PLANCK_RTB || cmd.id == MAV_CMD_NAV_PLANCK_TAKEOFF ||
+      cmd.id == MAV_CMD_NAV_PLANCK_WINGMAN);
 }
 
 /// get_next_nav_cmd - gets next "navigation" command found at or after start_index
@@ -904,6 +905,12 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
         break;
 
     case MAV_CMD_NAV_PLANCK_RTB:
+        break;
+        
+    case MAV_CMD_NAV_PLANCK_WINGMAN:
+        cmd.content.planck_wingman.x = packet.param1;
+        cmd.content.planck_wingman.y = packet.param2;
+        cmd.content.planck_wingman.z = packet.param3;
         break;
 
     default:

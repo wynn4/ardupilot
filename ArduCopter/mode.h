@@ -290,6 +290,7 @@ public:
     void nav_guided_start();
     void planck_takeoff_start(const float alt);
     void planck_rtb_start();
+    void planck_wingman_start();
 
     bool landing_gear_should_be_deployed() const override;
 
@@ -332,6 +333,7 @@ private:
     void loiter_run();
     void planck_takeoff_run();
     void planck_rtb_run();
+    void planck_wingman_run();
 
     void payload_place_start(const Vector3f& destination);
     void payload_place_run();
@@ -380,6 +382,7 @@ private:
     void do_RTL(void);
     void do_planck_takeoff(const AP_Mission::Mission_Command& cmd);
     void do_planck_rtb(const AP_Mission::Mission_Command& cmd);
+    void do_planck_wingman(const AP_Mission::Mission_Command& cmd);
 
     bool verify_takeoff();
     bool verify_land();
@@ -399,6 +402,7 @@ private:
     bool verify_nav_delay(const AP_Mission::Mission_Command& cmd);
     bool verify_planck_takeoff();
     bool verify_planck_rtb();
+    bool verify_planck_wingman();
 
     void auto_spline_start(const Location_Class& destination, bool stopped_at_start, AC_WPNav::spline_segment_end_type seg_end_type, const Location_Class& next_destination);
 

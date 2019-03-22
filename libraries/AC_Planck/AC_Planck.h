@@ -54,6 +54,7 @@ public:
   bool is_takeoff_complete() { return _status.takeoff_complete; };
   bool get_commbox_state() { return _status.commbox_ok && _status.commbox_gps_ok && _status.tracking_commbox_gps; };
   bool get_tag_tracking_state() { return _status.tracking_tag; };
+  bool at_location() { return _status.at_location; };
 
   //command getters
   cmd_type get_cmd_type(void) { return _cmd.type; }
@@ -97,6 +98,7 @@ private:
     bool tracking_tag = false;
     bool tracking_commbox_gps = false;
     bool takeoff_complete = false;
+    bool at_location = false;
     uint32_t timestamp_ms = 0;
   }_status;
   

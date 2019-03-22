@@ -20,6 +20,7 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
         _status.tracking_tag = (bool)(ps.status & 0x01);
         _status.tracking_commbox_gps = (bool)(ps.status & 0x02);
         _status.takeoff_complete = (bool)ps.takeoff_complete;
+        _status.at_location = (bool)ps.at_location;
         break;
     }
 
