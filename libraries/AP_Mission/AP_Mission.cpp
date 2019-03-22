@@ -1375,6 +1375,12 @@ bool AP_Mission::mission_cmd_to_mavlink_int(const AP_Mission::Mission_Command& c
         
     case MAV_CMD_NAV_PLANCK_RTB:
         break;
+        
+    case MAV_CMD_NAV_PLANCK_WINGMAN:
+        packet.param1 = cmd.content.planck_wingman.x;
+        packet.param2 = cmd.content.planck_wingman.y;
+        packet.param3 = cmd.content.planck_wingman.z;
+        break;
 
     default:
         // unrecognised command
