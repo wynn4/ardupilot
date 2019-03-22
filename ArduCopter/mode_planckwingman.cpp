@@ -25,7 +25,7 @@ void Copter::ModePlanckWingman::run() {
   //Update the command if the user is providing input from the sticks
   if(millis() > _next_req_send_t_ms) {
     // throttle failsafe check
-    if( !copter.failsafe.radio && copter.flightmode != &copter.mode_planckwingman) {
+    if( !copter.failsafe.radio && copter.flightmode != &copter.mode_auto) {
 
       //Get position/yaw offsets from user as necessary
       float x_rate = -channel_pitch->norm_input_dz() * copter.wp_nav->get_speed_xy()/100.;
