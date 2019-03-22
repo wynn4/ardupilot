@@ -34,7 +34,7 @@ void Copter::ModePlanckWingman::run() {
       //Turn x/y rates into N/E rates
       float N_rate = (x_rate*copter.ahrs.cos_yaw() - y_rate*copter.ahrs.sin_yaw());
       float E_rate = (x_rate*copter.ahrs.sin_yaw() + y_rate*copter.ahrs.cos_yaw());
-      float z_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in());
+      float z_rate = get_pilot_desired_climb_rate(channel_throttle->get_control_in())/100.;
 
       Vector3f rate_NED(N_rate, E_rate, z_rate); //NED
       

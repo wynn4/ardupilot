@@ -51,6 +51,16 @@ void Copter::ModePlanckTracking::run() {
                 roll_cd,
                 pitch_cd);
 
+              //If we are in WINGMAN mode, the user controls yaw, even though
+              //we might be getting attitude/acceleration commands
+              if(copter.flightmode == &copter.mode_planckwingman && !copter.failsafe.radio)
+              {
+                  // get pilot's desired yaw rate
+                  float pilot_yaw_rate_cds = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
+                  yaw_cd = pilot_yaw_rate_cds;
+                  is_yaw_rate = true;
+              }
+
               //Convert this to quaternions, yaw rates
               Quaternion q;
               q.from_euler(ToRad(roll_cd/100.), ToRad(pitch_cd/100.), ToRad(yaw_cd/100.));
@@ -73,6 +83,16 @@ void Copter::ModePlanckTracking::run() {
 
               if(!good_cmd) {
                   att_cd.x = att_cd.y = att_cd.z = vz_cms = 0;
+                  is_yaw_rate = true;
+              }
+
+              //If we are in WINGMAN mode, the user controls yaw, even though
+              //we might be getting attitude/acceleration commands
+              if(copter.flightmode == &copter.mode_planckwingman && !copter.failsafe.radio)
+              {
+                  // get pilot's desired yaw rate
+                  float pilot_yaw_rate_cds = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
+                  att_cd.z = pilot_yaw_rate_cds;
                   is_yaw_rate = true;
               }
 
