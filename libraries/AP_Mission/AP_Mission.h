@@ -201,7 +201,7 @@ public:
     struct PACKED Planck_Wingman_Command{
         float x;
         float y;
-        float z;
+        int16_t z_cm;
     };
 
     union PACKED Content {

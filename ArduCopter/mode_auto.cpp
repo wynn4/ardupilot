@@ -1643,7 +1643,7 @@ void Copter::ModeAuto::do_planck_wingman(const AP_Mission::Mission_Command& cmd)
       Vector3f(
         cmd.content.planck_wingman.x,
         cmd.content.planck_wingman.y,
-        cmd.content.planck_wingman.z
+        (float)cmd.content.planck_wingman.z_cm/100.
       )
     );
 }

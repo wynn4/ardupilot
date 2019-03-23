@@ -910,7 +910,7 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
     case MAV_CMD_NAV_PLANCK_WINGMAN:
         cmd.content.planck_wingman.x = packet.param1;
         cmd.content.planck_wingman.y = packet.param2;
-        cmd.content.planck_wingman.z = packet.param3;
+        cmd.content.planck_wingman.z_cm = (int16_t)(packet.param3*100);
         break;
 
     default:
@@ -1379,7 +1379,7 @@ bool AP_Mission::mission_cmd_to_mavlink_int(const AP_Mission::Mission_Command& c
     case MAV_CMD_NAV_PLANCK_WINGMAN:
         packet.param1 = cmd.content.planck_wingman.x;
         packet.param2 = cmd.content.planck_wingman.y;
-        packet.param3 = cmd.content.planck_wingman.z;
+        packet.param3 = (float)cmd.content.planck_wingman.z_cm/100.;
         break;
 
     default:
