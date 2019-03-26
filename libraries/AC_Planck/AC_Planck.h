@@ -54,7 +54,9 @@ public:
   bool is_takeoff_complete() { return _status.takeoff_complete; };
   bool get_commbox_state() { return _status.commbox_ok && _status.commbox_gps_ok && _status.tracking_commbox_gps; };
   bool get_tag_tracking_state() { return _status.tracking_tag; };
-  bool at_location() { return _status.at_location; };
+  
+  //oneshot _was_at_location
+  bool at_location() { bool tmp(_was_at_location); _was_at_location = false; return tmp; };
 
   //command getters
   cmd_type get_cmd_type(void) { return _cmd.type; }
@@ -103,6 +105,8 @@ private:
   }_status;
   
   mavlink_channel_t _chan = MAVLINK_COMM_1;
+  
+  bool _was_at_location = false; //For debouncing at-location
   
   bool _is_status_ok(void) { return ((AP_HAL::millis() - _status.timestamp_ms) < 500); }
 };

@@ -1342,6 +1342,6 @@ protected:
   
 private:  
 
-    int64_t _next_req_send_t_ms = 0; //For sending new targets at a fixed rate
+    uint32_t _next_req_send_t_ms = 0; //For sending new targets at a fixed rate
     const int8_t _send_rate_ms = 100; //10hz, 100ms
 };

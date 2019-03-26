@@ -21,6 +21,12 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
         _status.tracking_commbox_gps = (bool)(ps.status & 0x02);
         _status.takeoff_complete = (bool)ps.takeoff_complete;
         _status.at_location = (bool)ps.at_location;
+        
+        //_was_at_location is special, as it is only triggered once per event
+        //on the planck side. set the flag but also the oneshot value
+        if(!_was_at_location && _status.at_location) {
+          _was_at_location = true;
+        }
         break;
     }
 
@@ -245,6 +251,10 @@ void AC_Planck::request_move_target(const Vector3f offset_cmd_NED, const bool is
     offset_cmd_NED.z, //param4
     is_rate,          //param5
     0);               //param6
+    
+  //If the target has moved, the _was_at_location flag must go false until we
+  //hear otherwise from planck
+  _was_at_location = false;
 }
 
 void AC_Planck::stop_commanding(void)

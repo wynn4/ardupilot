@@ -1,6 +1,9 @@
 #include "Copter.h"
 
 bool Copter::ModePlanckWingman::init(bool ignore_checks){
+  
+    //Make sure we don't immediately send a different command
+    _next_req_send_t_ms = millis() + _send_rate_ms;
 
     //If we are already landed this makes no sense
     if(copter.ap.land_complete)
@@ -11,9 +14,6 @@ bool Copter::ModePlanckWingman::init(bool ignore_checks){
 
       //And command a zero-rate, telling planck to maintain current relative position 
       copter.planck_interface.request_move_target(Vector3f(0,0,0),true);
-
-      //Make sure we don't immediately send a different command
-      _next_req_send_t_ms = millis() + _send_rate_ms;
       return true;
     }
 
@@ -42,9 +42,8 @@ void Copter::ModePlanckWingman::run() {
       if(N_rate != 0 || E_rate != 0 || z_rate !=0) {
         copter.planck_interface.request_move_target(rate_NED, true);
       }
+      _next_req_send_t_ms = millis() + _send_rate_ms;
     }
-
-    _next_req_send_t_ms = millis() + _send_rate_ms;
   }
   
   copter.mode_plancktracking.run();

@@ -421,6 +421,10 @@ void Copter::ModeAuto::planck_rtb_start()
 
 void Copter::ModeAuto::planck_wingman_start()
 {
+    //Don't re-initialize planck wingman unnecessarily
+    if(_mode == Auto_PlanckWingman)
+      return;
+
     _mode = Auto_PlanckWingman;
 
     //Tell planck to start tracking
@@ -638,8 +642,13 @@ void Copter::ModeAuto::exit_mission()
     AP_Notify::events.mission_complete = 1;
     // if we are not on the ground switch to loiter or land
     if (!ap.land_complete) {
+        //If the last waypoint was a planck takeoff or wingman waypoint, stay in wingman
+        if (mode() == Auto_PlanckWingman || mode() == Auto_PlanckTakeoff) {
+            planck_wingman_start();
+        }
+
         // try to enter loiter but if that fails land
-        if (!loiter_start()) {
+        else if (!loiter_start()) {
             set_mode(LAND, MODE_REASON_MISSION_END);
         }
     } else {
