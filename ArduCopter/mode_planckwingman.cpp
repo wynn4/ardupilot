@@ -24,7 +24,8 @@ void Copter::ModePlanckWingman::run() {
 
   //Update the command if the user is providing input and we're not in AUTO
   if( !copter.failsafe.radio && copter.flightmode != &copter.mode_auto) {
-    
+
+    //Rate limited
     if(millis() > _next_req_send_t_ms) {
 
       //Get position/yaw offsets from user as necessary
@@ -38,10 +39,8 @@ void Copter::ModePlanckWingman::run() {
 
       Vector3f rate_NED(N_rate, E_rate, z_rate); //NED
       
-      //Send a command request if any of our rates are non-zero
-      if(N_rate != 0 || E_rate != 0 || z_rate !=0) {
-        copter.planck_interface.request_move_target(rate_NED, true);
-      }
+      copter.planck_interface.request_move_target(rate_NED, true);
+
       _next_req_send_t_ms = millis() + _send_rate_ms;
     }
   }
