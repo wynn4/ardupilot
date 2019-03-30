@@ -10,7 +10,7 @@
 //Defines the interface to Planck's control software
 
 class AC_Planck {
-  
+
 public:
 
   enum cmd_type {
@@ -23,13 +23,13 @@ public:
   };
 
   AC_Planck(void) {}
-  
+
   ~AC_Planck(void) {}
 
   //Handle incoming messages
   void handle_planck_mavlink_msg(const mavlink_channel_t &chan, const mavlink_message_t *mav_msg, AP_AHRS &ahrs);
-  
-  //Send the planck stateinfo message  
+
+  //Send the planck stateinfo message
   void send_stateinfo(const mavlink_channel_t &chan,
     uint8_t control_mode,
     bool armed,
@@ -37,10 +37,10 @@ public:
     bool failsafe,
     AP_AHRS_NavEKF &ahrs,
     AP_InertialNav &inertial_nav,
-    Location &current_loc,
+    Location_Class &current_loc,
     AP_GPS &gps);
 
-  //Requesters to be sent to planck  
+  //Requesters to be sent to planck
   void request_takeoff(const float alt);
   void request_alt_change(const float alt);
   void request_rtb(const float alt, const float rate_up, const float rate_down, const float rate_xy);
@@ -54,7 +54,7 @@ public:
   bool is_takeoff_complete() { return _status.takeoff_complete; };
   bool get_commbox_state() { return _status.commbox_ok && _status.commbox_gps_ok && _status.tracking_commbox_gps; };
   bool get_tag_tracking_state() { return _status.tracking_tag; };
-  
+
   //oneshot _was_at_location
   bool at_location() { bool tmp(_was_at_location); _was_at_location = false; return tmp; };
 
@@ -71,12 +71,12 @@ public:
   //Get a velocity, yaw command
   bool get_velocity_cmd(Vector3f &vel_cms);
 
-  //Get a position command  
+  //Get a position command
   bool get_position_cmd(Location &loc);
 
-  //Get a position, velocity, yaw command  
+  //Get a position, velocity, yaw command
   bool get_posvel_cmd(Location &loc, Vector3f &vel_cms);
-  
+
 private:
 
   struct
@@ -90,7 +90,7 @@ private:
     bool is_new = false;
     cmd_type type = NONE;
   }_cmd;
-  
+
   struct
   {
     bool takeoff_ready = false;
@@ -103,10 +103,10 @@ private:
     bool at_location = false;
     uint32_t timestamp_ms = 0;
   }_status;
-  
+
   mavlink_channel_t _chan = MAVLINK_COMM_1;
-  
+
   bool _was_at_location = false; //For debouncing at-location
-  
+
   bool _is_status_ok(void) { return ((AP_HAL::millis() - _status.timestamp_ms) < 500); }
 };
