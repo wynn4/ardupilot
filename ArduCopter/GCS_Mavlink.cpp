@@ -1238,6 +1238,19 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
             }
             break;
 
+        case MAV_CMD_NAV_PLANCK_WINGMAN:
+            if (copter.set_mode(PLANCKWINGMAN, MODE_REASON_GCS_COMMAND)) {
+                result = MAV_RESULT_ACCEPTED;
+
+                //Offset parameters are: param1: N, param2: E, param3: Up
+                float north = packet.param1;
+                float east = packet.param2;
+                float up = packet.param3;
+                copter.planck_interface.request_move_target(Vector3f(north,east,up));
+            }
+
+            break;
+
         default:
             result = handle_command_long_message(packet);
             break;
