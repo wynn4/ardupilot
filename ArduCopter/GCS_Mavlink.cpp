@@ -1245,7 +1245,7 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
                 //Offset parameters are: param1: N, param2: E, param3: Up
                 float north = packet.param1;
                 float east = packet.param2;
-                float up = packet.param3;
+                float up = packet.param3 + (copter.inertial_nav.get_position().z / 100.);
                 copter.planck_interface.request_move_target(Vector3f(north,east,up));
             }
 
