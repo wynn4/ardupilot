@@ -46,10 +46,12 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
               _cmd.pos.flags.relative_alt = true;
               _cmd.pos.flags.terrain_alt = false;
               break;
+            case MAV_FRAME_GLOBAL_TERRAIN_ALT:
             case MAV_FRAME_GLOBAL_TERRAIN_ALT_INT:
               _cmd.pos.flags.relative_alt = true;
               _cmd.pos.flags.terrain_alt = true;
               break;
+            case MAV_FRAME_GLOBAL:
             case MAV_FRAME_GLOBAL_INT:
             default:
               // Copter does not support navigation to absolute altitudes. This convert the WGS84 altitude
