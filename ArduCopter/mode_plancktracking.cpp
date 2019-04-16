@@ -145,9 +145,20 @@ void Copter::ModePlanckTracking::run() {
               }
               else
               {
-                  Copter::ModeGuided::set_destination_posvel(
-                    copter.pv_location_to_vector(loc_cmd),
-                    vel_cmd);
+                  //GUIDED posvel doesn't account for terrain altitude; get the
+                  //terrain-alt shifted home-relative altitude if this is a
+                  //terrain-relative command
+                  Vector3f pos_cmd = copter.pv_location_to_vector(loc_cmd);
+                  if(loc_cmd.flags.terrain_alt) {
+                      Location_Class loc_class(loc_cmd);
+                      int32_t new_alt_cm = pos_cmd.z;
+                      if(!loc_class.get_alt_cm(Location_Class::ALT_FRAME_ABOVE_HOME, new_alt_cm)) {
+                          copter.Log_Write_Error(ERROR_SUBSYSTEM_NAVIGATION, ERROR_CODE_FAILED_TO_SET_DESTINATION);
+                      } else {
+                          pos_cmd.z = new_alt_cm;
+                      }
+                  }
+                  Copter::ModeGuided::set_destination_posvel(pos_cmd,vel_cmd);
               }
               break;
           }
