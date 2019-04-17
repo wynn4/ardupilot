@@ -154,10 +154,10 @@ void AC_Planck::send_stateinfo(const mavlink_channel_t &chan,
 
     const Vector3f &vel = inertial_nav.get_velocity()/100;
 
-    int32_t alt_above_home_cm = current_loc.alt * 10UL;
-    int32_t alt_above_terrain_cm = alt_above_home_cm;
+    int32_t alt_above_home_mm = current_loc.alt * 10UL;
+    int32_t alt_above_terrain_cm = alt_above_home_mm / 10UL;
     if(!current_loc.get_alt_cm(Location_Class::ALT_FRAME_ABOVE_TERRAIN, alt_above_terrain_cm)) {
-        alt_above_terrain_cm = alt_above_home_cm;
+        alt_above_terrain_cm = alt_above_home_mm/10UL;
     }
 
     mavlink_msg_planck_stateinfo_send(
@@ -180,8 +180,8 @@ void AC_Planck::send_stateinfo(const mavlink_channel_t &chan,
       current_loc.lat,                // in 1E7 degrees
       current_loc.lng,                // in 1E7 degrees
       (ahrs.get_home().alt + current_loc.alt) * 10UL,      // millimeters above sea level
-      alt_above_home_cm,              // millimeters above ground
-      alt_above_terrain_cm,           //mm above terrain
+      alt_above_home_mm,              // millimeters above ground
+      alt_above_terrain_cm * 10UL,    //mm above terrain
       vel.x,                          // X speed m/s (+ve North)
       vel.y,                          // Y speed m/s (+ve East)
       vel.z);                         // Z speed m/s (+ve up)
