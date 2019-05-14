@@ -18,6 +18,14 @@ bool Copter::ModePlanckTracking::init(bool ignore_checks){
     //Otherwise do nothing, as we are on the ground waiting for a takeoff
     //command
 
+    //For initialization, if the GPS is bad but we have a tag detection,
+    //just use GUIDED_NOGPS, as we don't want to require the use of GPS for
+    //GPS-denied operation.  Subsequent commands will be accel/attitude based.
+    if(!copter.position_ok() && copter.planck_interface.get_tag_tracking_state()) {
+      return copter.mode_guided_nogps.init(ignore_checks);
+    }
+
+    //Otherwise, use GUIDED
     return Copter::ModeGuided::init(ignore_checks);
 }
 
