@@ -15,13 +15,14 @@ bool Copter::ModePlanckTracking::init(bool ignore_checks){
           rate_xy_cms/100.);
     }
 
-    //Otherwise do nothing, as we are on the ground waiting for a takeoff
-    //command
+    //Otherwise do nothing, as we are on the ground waiting for a takeoff command
 
     //For initialization, if the GPS is bad but we have a tag detection,
     //just use GUIDED_NOGPS, as we don't want to require the use of GPS for
     //GPS-denied operation.  Subsequent commands will be accel/attitude based.
     if(!copter.position_ok() && copter.planck_interface.get_tag_tracking_state()) {
+      //Set the angle to zero and a zero z rate; this prevents an initial drop
+      Copter::ModeGuided::set_angle(Quaternion(),0,true,0);
       return copter.mode_guided_nogps.init(ignore_checks);
     }
 
