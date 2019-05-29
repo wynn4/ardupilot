@@ -1043,10 +1043,12 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
             if (is_equal(packet.param1,1.0f) || is_equal(packet.param1,3.0f)) {
                 AP_Notify::flags.firmware_update = 1;
                 copter.notify.update();
+                // send ACK or NAK
+                result = MAV_RESULT_ACCEPTED;
+                mavlink_msg_command_ack_send_buf(msg, chan, packet.command, result);
                 hal.scheduler->delay(200);
                 // when packet.param1 == 3 we reboot to hold in bootloader
                 hal.scheduler->reboot(is_equal(packet.param1,3.0f));
-                result = MAV_RESULT_ACCEPTED;
             }
             break;
 
@@ -1395,7 +1397,7 @@ void GCS_MAVLINK_Copter::handleMessage(mavlink_message_t* msg)
             //planck tracking or planck_wingman, adjust the tracking altitude
             //with a new target shift cmd
             if(packet.coordinate_frame == MAV_FRAME_LOCAL_OFFSET_NED &&
-               packet.x == 0 && packet.y == 0 &&
+               is_equal(packet.x,0.0f) && is_equal(packet.y,0.0f) &&
                (copter.flightmode == &copter.mode_plancktracking ||
                 copter.flightmode == &copter.mode_planckwingman))
             {
