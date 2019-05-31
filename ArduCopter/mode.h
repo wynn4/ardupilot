@@ -116,6 +116,9 @@ protected:
     void land_run_horizontal_control();
     void land_run_vertical_control(bool pause_descent = false);
 
+    //Does the mode require planck commands
+    virtual bool requires_planck() const { return false; };
+
     // convenience references to avoid code churn in conversion:
     Parameters &g;
     ParametersG2 &g2;
@@ -291,6 +294,7 @@ public:
     void planck_takeoff_start(const float alt);
     void planck_rtb_start();
     void planck_wingman_start();
+    bool requires_planck() const override { return _planck_used; }
 
     bool landing_gear_should_be_deployed() const override;
 
@@ -430,6 +434,8 @@ private:
         float descend_start_altitude;
         float descend_max; // centimetres
     } nav_payload_place;
+
+    bool _planck_used; //If planck is being used currently
 
 };
 
@@ -1269,6 +1275,7 @@ public:
     bool is_autopilot() const override { return true; }
     virtual bool has_user_takeoff(bool must_navigate) const { return true; }
     bool do_user_takeoff_start(float final_alt_above_home) override;
+    bool requires_planck() const override { return true; }
 
 protected:
     
@@ -1292,6 +1299,7 @@ public:
     bool has_manual_throttle() const override { return false; }
     bool allows_arming(bool from_gcs) const override { return false; }
     bool is_autopilot() const override { return true; }
+    bool requires_planck() const override { return true; }
 
 protected:
 
@@ -1314,6 +1322,7 @@ public:
     bool has_manual_throttle() const override { return false; }
     bool allows_arming(bool from_gcs) const override { return false; }
     bool is_autopilot() const override { return true; }
+    bool requires_planck() const override { return true; }
 
 protected:
 
@@ -1334,6 +1343,7 @@ public:
     bool has_manual_throttle() const override { return false; }
     bool allows_arming(bool from_gcs) const override { return false; }
     bool is_autopilot() const override { return true; }
+    bool requires_planck() const override { return true; }
 
 protected:
 

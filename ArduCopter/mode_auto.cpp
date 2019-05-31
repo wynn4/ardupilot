@@ -22,6 +22,9 @@
 // auto_init - initialise auto controller
 bool Copter::ModeAuto::init(bool ignore_checks)
 {
+    //Assume planck is not being used; substates will change the flag if otherwise
+    _planck_used = false;
+
     if ((copter.position_ok() && copter.mission.num_commands() > 1) || ignore_checks) {
         _mode = Auto_Loiter;
 
@@ -642,14 +645,12 @@ void Copter::ModeAuto::exit_mission()
     AP_Notify::events.mission_complete = 1;
     // if we are not on the ground switch to loiter or land
     if (!ap.land_complete) {
-        //If the last waypoint was a planck takeoff or wingman waypoint, stay in wingman
-        if (mode() == Auto_PlanckWingman || mode() == Auto_PlanckTakeoff) {
-            planck_wingman_start();
-        }
-
-        // try to enter loiter but if that fails land
-        else if (!loiter_start()) {
-            set_mode(LAND, MODE_REASON_MISSION_END);
+        //If the last waypoint was NOT a planck takeoff or wingman waypoint
+        if (!(mode() == Auto_PlanckWingman || mode() == Auto_PlanckTakeoff)) {
+            // try to enter loiter but if that fails land
+            if (!loiter_start()) {
+                set_mode(LAND, MODE_REASON_MISSION_END);
+            }
         }
     } else {
         // if we've landed it's safe to disarm
@@ -1638,11 +1639,13 @@ void Copter::ModeAuto::do_RTL(void)
 void Copter::ModeAuto::do_planck_takeoff(const AP_Mission::Mission_Command& cmd)
 {
     planck_takeoff_start(cmd.content.planck_takeoff.alt);
+    _planck_used = true;
 }
 
 void Copter::ModeAuto::do_planck_rtb(const AP_Mission::Mission_Command& cmd)
 {
     planck_rtb_start();
+    _planck_used = true;
 }
 
 void Copter::ModeAuto::do_planck_wingman(const AP_Mission::Mission_Command& cmd)
@@ -1655,6 +1658,7 @@ void Copter::ModeAuto::do_planck_wingman(const AP_Mission::Mission_Command& cmd)
         (float)cmd.content.planck_wingman.z_cm/100.
       )
     );
+    _planck_used = true;
 }
 
 /********************************************************************************/
@@ -1901,10 +1905,18 @@ bool Copter::ModeAuto::verify_planck_takeoff()
 {
     if(copter.planck_interface.is_takeoff_complete())
     {
-        //if there are more waypoints, tell planck to stop commanding
-        if(copter.mission.num_commands() > 1)
-          copter.planck_interface.stop_commanding();
-        return true;
+      AP_Mission::Mission_Command tmp_cmd;
+      //returns false if there is no next nav waypoint
+      if(copter.mission.get_next_nav_cmd(copter.mission.get_current_nav_index()+1, tmp_cmd))
+      {
+          if(!(tmp_cmd.id == MAV_CMD_NAV_PLANCK_RTB ||
+               tmp_cmd.id == MAV_CMD_NAV_PLANCK_WINGMAN ||
+               tmp_cmd.id == MAV_CMD_NAV_PLANCK_TAKEOFF))
+          {
+              copter.planck_interface.stop_commanding();
+          }
+      }
+      return true;
     }
     return false;
 }
@@ -1912,11 +1924,30 @@ bool Copter::ModeAuto::verify_planck_takeoff()
 bool Copter::ModeAuto::verify_planck_rtb()
 {
     return ap.land_complete;
+    //Planck will automatically stop commanding when the copter disarms
 }
 
 bool Copter::ModeAuto::verify_planck_wingman()
 {
-    return copter.planck_interface.at_location();
+    //if the next waypoint is not a planck waypoint, tell planck to stop commanding
+    if(copter.planck_interface.at_location())
+    {
+      AP_Mission::Mission_Command tmp_cmd;
+      //returns false if there is no next nav waypoint
+      if(copter.mission.get_next_nav_cmd(copter.mission.get_current_nav_index()+1, tmp_cmd))
+      {
+          if(!(tmp_cmd.id == MAV_CMD_NAV_PLANCK_RTB ||
+               tmp_cmd.id == MAV_CMD_NAV_PLANCK_WINGMAN ||
+               tmp_cmd.id == MAV_CMD_NAV_PLANCK_TAKEOFF))
+          {
+              copter.planck_interface.stop_commanding();
+          }
+      }
+
+      return true;
+    }
+
+    return false;
 }
 
 /********************************************************************************/
