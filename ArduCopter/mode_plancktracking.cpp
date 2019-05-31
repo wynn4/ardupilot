@@ -219,16 +219,7 @@ bool Copter::ModePlanckTracking::allows_arming(bool from_gcs) const
         return false;
     }
 
-    if((copter.arming.checks_to_perform & AP_Arming::ARMING_CHECK_ALL) ||
-       (copter.arming.checks_to_perform & AP_Arming::ARMING_CHECK_PLANCK_GPS))
-    {
-        if(!copter.planck_interface.get_commbox_state())
-        {
-            copter.gcs().send_text(MAV_SEVERITY_CRITICAL,
-              "Arm: Planck not tracking Commbox GPS");
-            return false;
-        }
-    }
+    //Planck commbox GPS checks are checked in AP_Arming
 
     return true;
 }
