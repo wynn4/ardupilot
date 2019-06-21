@@ -100,7 +100,9 @@ void Copter::failsafe_gcs_check()
     // return immediately if gcs failsafe is disabled, gcs has never been connected or we are not overriding rc controls from the gcs and we are not in guided mode
     // this also checks to see if we have a GCS failsafe active, if we do, then must continue to process the logic for recovery from this state.
     if ((!failsafe.gcs)&&(g.failsafe_gcs == FS_GCS_DISABLED || failsafe.last_heartbeat_ms == 0 || (!failsafe.rc_override_active && control_mode != GUIDED))) {
-        return;
+        //Check the status of the commbox GPS.  If we have data, there is no failsafe
+        if(planck_interface.get_commbox_state() || g.failsafe_gcs == FS_GCS_DISABLED)
+            return;
     }
 
     // calc time since last gcs update
