@@ -10,6 +10,7 @@ bool Copter::ModePlanckLand::init(bool ignore_checks){
       return false;
     }
 
+    Copter::ModeGuided::set_angle(Quaternion(),0,true,0);
     if(Copter::ModeGuidedNoGPS::init(ignore_checks)) {
         float land_velocity = abs((copter.g.land_speed > 0 ?
             copter.g.land_speed : copter.pos_control->get_speed_down()))/100.;

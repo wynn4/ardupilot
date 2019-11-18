@@ -221,6 +221,7 @@ enum GuidedMode {
     Guided_Velocity,
     Guided_PosVel,
     Guided_Angle,
+    Guided_Angle_HighJerkZ,
 };
 
 // RTL states

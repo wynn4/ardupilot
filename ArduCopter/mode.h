@@ -809,6 +809,7 @@ public:
     bool in_guided_mode() const { return true; }
     bool has_user_takeoff(bool must_navigate) const override { return true; }
 
+    void set_angle_highjerk_z(const Quaternion &q, float climb_rate_cms, bool use_yaw_rate, float yaw_rate_rads);
     void set_angle(const Quaternion &q, float climb_rate_cms, bool use_yaw_rate, float yaw_rate_rads);
     bool set_destination(const Vector3f& destination, bool use_yaw = false, float yaw_cd = 0.0, bool use_yaw_rate = false, float yaw_rate_cds = 0.0, bool yaw_relative = false);
     bool set_destination(const Location_Class& dest_loc, bool use_yaw = false, float yaw_cd = 0.0, bool use_yaw_rate = false, float yaw_rate_cds = 0.0, bool yaw_relative = false);
@@ -825,8 +826,9 @@ public:
 
     GuidedMode mode() const { return guided_mode; }
 
+    void angle_highjerk_z_control_start();
     void angle_control_start();
-    void angle_control_run();
+    void angle_control_run(bool high_jerk_z = false);
 
 protected:
 
