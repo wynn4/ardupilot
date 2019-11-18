@@ -36,8 +36,8 @@
 #define POSCONTROL_VEL_ERROR_CUTOFF_FREQ        4.0f    // low-pass filter on velocity error (unit: hz)
 #define POSCONTROL_THROTTLE_CUTOFF_FREQ         2.0f    // low-pass filter on accel error (unit: hz)
 #define POSCONTROL_ACCEL_FILTER_HZ              2.0f    // low-pass filter on acceleration (unit: hz)
-#define POSCONTROL_JERK_RATIO                   1.0f    // Defines the time it takes to reach the requested acceleration
-#define POSCONTROL_HIGH_JERK_RATIO              10.0f   // Defines the time it takes to reach the requested acceleration, higher to allow more agressive changes in z position target
+#define POSCONTROL_JERK_RATIO                   1.0f    // Defines the time (delta_T) it takes to reach the requested acceleration as ratio = (1/delta_T)
+#define POSCONTROL_HIGH_JERK_RATIO              10.0f   // Defines the time (delta_T) it takes to reach the requested acceleration as ratio = (1/delta_T), higher to allow more agressive changes in z position target
 
 #define POSCONTROL_OVERSPEED_GAIN_Z             2.0f    // gain controlling rate at which z-axis speed is brought back within SPEED_UP and SPEED_DOWN range
 
@@ -379,6 +379,7 @@ protected:
     AC_PID      _pid_accel_z;
     AC_P        _p_pos_xy;
     AC_PID_2D   _pid_vel_xy;
+    AP_Float    _poscontrol_high_jerkratio; // Defines the time it takes to reach the requested acceleration in z: higher to allow more agressive changes in z position target
 
     // internal variables
     float       _dt;                    // time difference (in seconds) between calls from the main program
