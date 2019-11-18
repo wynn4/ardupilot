@@ -185,7 +185,7 @@ const AP_Param::GroupInfo AC_PosControl::var_info[] = {
     // @Range: 1 10
     // @Increment: 1
     // @User: Advanced
-    AP_GROUPINFO("_HIGH_JERK_RATIO",  8, AC_PosControl, _poscontrol_high_jerkratio, POSCONTROL_HIGH_JERK_RATIO),
+    AP_GROUPINFO("_HIGH_JERK",  8, AC_PosControl, _poscontrol_high_jerkratio, POSCONTROL_HIGH_JERK_RATIO),
 
     AP_GROUPEND
 };
@@ -348,6 +348,7 @@ void AC_PosControl::set_alt_target_from_climb_rate_ff(float climb_rate_cms, floa
     // jerk_z is calculated to reach full acceleration in (1/jerk_ratio) ms.
     float jerk_z = accel_z_cms * POSCONTROL_JERK_RATIO;
     if(high_jerk_z){
+        // hal.console->printf("Jerk ratio: %f \n", float(_poscontrol_high_jerkratio));
         jerk_z = accel_z_cms * _poscontrol_high_jerkratio;
     }
 
@@ -357,6 +358,14 @@ void AC_PosControl::set_alt_target_from_climb_rate_ff(float climb_rate_cms, floa
     _accel_last_z_cms = MIN(accel_z_max, _accel_last_z_cms);
 
     float vel_change_limit = _accel_last_z_cms * dt;
+
+    // if( climb_rate_cms < _vel_desired.z-vel_change_limit || climb_rate_cms > _vel_desired.z+vel_change_limit  ){
+    //   hal.console->printf("accel_z_max: %f accel_z_cms: %f jerk_z:%f\n", accel_z_max, accel_z_cms, jerk_z);
+
+    //   hal.console->printf("vel_change_limit: %f _accel_last_z_cms: %f \n", vel_change_limit,_accel_last_z_cms);
+    //   hal.console->printf("climb_rate_cms: %f lower_thres: %f upper_thres: %f\n", climb_rate_cms, _vel_desired.z-vel_change_limit, _vel_desired.z+vel_change_limit);
+    // }
+
     _vel_desired.z = constrain_float(climb_rate_cms, _vel_desired.z-vel_change_limit, _vel_desired.z+vel_change_limit);
     _flags.use_desvel_ff_z = true;
 
