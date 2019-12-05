@@ -37,7 +37,7 @@
 #define POSCONTROL_THROTTLE_CUTOFF_FREQ         2.0f    // low-pass filter on accel error (unit: hz)
 #define POSCONTROL_ACCEL_FILTER_HZ              2.0f    // low-pass filter on acceleration (unit: hz)
 #define POSCONTROL_JERK_RATIO                   1.0f    // Defines the time (delta_T) it takes to reach the requested acceleration as ratio = (1/delta_T)
-#define POSCONTROL_HIGH_JERK_RATIO              10.0f   // Defines the time (delta_T) it takes to reach the requested acceleration as ratio = (1/delta_T), higher to allow more agressive changes in z position target
+#define POSCONTROL_HIGH_JERK_RATIO              1.0f   // Defines the time (delta_T) it takes to reach the requested acceleration as ratio = (1/delta_T), higher to allow more agressive changes in z position target
 
 #define POSCONTROL_OVERSPEED_GAIN_Z             2.0f    // gain controlling rate at which z-axis speed is brought back within SPEED_UP and SPEED_DOWN range
 
