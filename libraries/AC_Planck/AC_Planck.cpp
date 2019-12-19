@@ -138,7 +138,7 @@ void AC_Planck::send_stateinfo(const mavlink_channel_t &chan,
   {
 
     Vector3f accel;
-    ahrs.get_NavEKF2().getAccelNED(accel);
+    ahrs.get_NavEKF2().getAccelNEDCurrent(accel);
 
     Vector3f gyro = ahrs.get_gyro_latest();
 
