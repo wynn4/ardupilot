@@ -178,7 +178,7 @@ void Copter::ModePlanckTracking::run() {
     }
 
     //Run the guided mode controller
-    Copter::ModeGuided::run();
+    Copter::ModeGuided::run(true); //use high-jerk
 }
 
 bool Copter::ModePlanckTracking::do_user_takeoff_start(float final_alt_above_home)
