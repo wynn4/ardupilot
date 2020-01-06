@@ -143,35 +143,6 @@ void Copter::ModeGuided::posvel_control_start()
     auto_yaw.set_mode(AUTO_YAW_HOLD);
 }
 
-// initialise guided mode's angle controller for high jerk ratio in Z (more agressive Z target)
-void Copter::ModeGuided::angle_highjerk_z_control_start()
-{
-    // set guided_mode to velocity controller
-    guided_mode = Guided_Angle_HighJerkZ;
-
-    // set vertical speed and acceleration
-    pos_control->set_speed_z(wp_nav->get_speed_down(), wp_nav->get_speed_up());
-    pos_control->set_accel_z(wp_nav->get_accel_z());
-
-    // initialise position and desired velocity
-    if (!pos_control->is_active_z()) {
-        pos_control->set_alt_target_to_current_alt();
-        pos_control->set_desired_velocity_z(inertial_nav.get_velocity_z());
-    }
-
-    // initialise targets
-    guided_angle_state.update_time_ms = millis();
-    guided_angle_state.roll_cd = ahrs.roll_sensor;
-    guided_angle_state.pitch_cd = ahrs.pitch_sensor;
-    guided_angle_state.yaw_cd = ahrs.yaw_sensor;
-    guided_angle_state.climb_rate_cms = 0.0f;
-    guided_angle_state.yaw_rate_cds = 0.0f;
-    guided_angle_state.use_yaw_rate = false;
-
-    // pilot always controls yaw
-    auto_yaw.set_mode(AUTO_YAW_HOLD);
-}
-
 // initialise guided mode's angle controller
 void Copter::ModeGuided::angle_control_start()
 {
@@ -328,36 +299,6 @@ bool Copter::ModeGuided::set_destination_posvel(const Vector3f& destination, con
     return true;
 }
 
-// set guided mode angle target with higher jerk z for more agressive z target set point
-void Copter::ModeGuided::set_angle_highjerk_z(const Quaternion &q, float climb_rate_cms, bool use_yaw_rate, float yaw_rate_rads)
-{
-    // check we are in velocity control mode
-    if (guided_mode != Guided_Angle_HighJerkZ) {
-        angle_highjerk_z_control_start();
-    }
-
-    // convert quaternion to euler angles
-    q.to_euler(guided_angle_state.roll_cd, guided_angle_state.pitch_cd, guided_angle_state.yaw_cd);
-    guided_angle_state.roll_cd = ToDeg(guided_angle_state.roll_cd) * 100.0f;
-    guided_angle_state.pitch_cd = ToDeg(guided_angle_state.pitch_cd) * 100.0f;
-    guided_angle_state.yaw_cd = wrap_180_cd(ToDeg(guided_angle_state.yaw_cd) * 100.0f);
-    guided_angle_state.yaw_rate_cds = ToDeg(yaw_rate_rads) * 100.0f;
-    guided_angle_state.use_yaw_rate = use_yaw_rate;
-
-    guided_angle_state.climb_rate_cms = climb_rate_cms;
-    guided_angle_state.update_time_ms = millis();
-
-    // interpret positive climb rate as triggering take-off
-    if (motors->armed() && !ap.auto_armed && (guided_angle_state.climb_rate_cms > 0.0f)) {
-        copter.set_auto_armed(true);
-    }
-
-    // log target
-    copter.Log_Write_GuidedTarget(guided_mode,
-                           Vector3f(guided_angle_state.roll_cd, guided_angle_state.pitch_cd, guided_angle_state.yaw_cd),
-                           Vector3f(0.0f, 0.0f, guided_angle_state.climb_rate_cms));
-}
-
 // set guided mode angle target
 void Copter::ModeGuided::set_angle(const Quaternion &q, float climb_rate_cms, bool use_yaw_rate, float yaw_rate_rads)
 {
@@ -390,7 +331,7 @@ void Copter::ModeGuided::set_angle(const Quaternion &q, float climb_rate_cms, bo
 
 // guided_run - runs the guided controller
 // should be called at 100hz or more
-void Copter::ModeGuided::run()
+void Copter::ModeGuided::run(bool high_jerk_z)
 {
     // call the correct auto controller
     switch (guided_mode) {
@@ -417,12 +358,7 @@ void Copter::ModeGuided::run()
 
     case Guided_Angle:
         // run angle controller
-        angle_control_run();
-        break;
-
-    case Guided_Angle_HighJerkZ:
-        // run angle controller
-        angle_control_run(true);
+        angle_control_run(high_jerk_z);
         break;
     }
 

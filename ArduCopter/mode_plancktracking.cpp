@@ -22,7 +22,7 @@ bool Copter::ModePlanckTracking::init(bool ignore_checks){
     //GPS-denied operation.  Subsequent commands will be accel/attitude based.
     if(!copter.position_ok() && copter.planck_interface.get_tag_tracking_state()) {
       //Set the angle to zero and a zero z rate; this prevents an initial drop
-      Copter::ModeGuided::set_angle_highjerk_z(Quaternion(),0,true,0);
+      Copter::ModeGuided::set_angle(Quaternion(),0,true,0);
       return copter.mode_guided_nogps.init(ignore_checks);
     }
 
@@ -76,7 +76,7 @@ void Copter::ModePlanckTracking::run() {
               float yaw_rate_rads = ToRad(yaw_cd / 100.);
 
               //Update the GUIDED mode controller
-              Copter::ModeGuided::set_angle_highjerk_z(q,vz_cms,is_yaw_rate,yaw_rate_rads);
+              Copter::ModeGuided::set_angle(q,vz_cms,is_yaw_rate,yaw_rate_rads);
               break;
           }
 
@@ -111,7 +111,7 @@ void Copter::ModePlanckTracking::run() {
               float yaw_rate_rads = ToRad(att_cd.z / 100.);
 
               //Update the GUIDED mode controller
-              Copter::ModeGuided::set_angle_highjerk_z(q,vz_cms,is_yaw_rate,yaw_rate_rads);
+              Copter::ModeGuided::set_angle(q,vz_cms,is_yaw_rate,yaw_rate_rads);
               break;
           }
 
@@ -178,7 +178,7 @@ void Copter::ModePlanckTracking::run() {
     }
 
     //Run the guided mode controller
-    Copter::ModeGuided::run();
+    Copter::ModeGuided::run(true); //use high-jerk
 }
 
 bool Copter::ModePlanckTracking::do_user_takeoff_start(float final_alt_above_home)
