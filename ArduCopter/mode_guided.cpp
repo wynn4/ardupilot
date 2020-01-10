@@ -331,7 +331,7 @@ void Copter::ModeGuided::set_angle(const Quaternion &q, float climb_rate_cms, bo
 
 // guided_run - runs the guided controller
 // should be called at 100hz or more
-void Copter::ModeGuided::run()
+void Copter::ModeGuided::run(bool high_jerk_z)
 {
     // call the correct auto controller
     switch (guided_mode) {
@@ -358,9 +358,10 @@ void Copter::ModeGuided::run()
 
     case Guided_Angle:
         // run angle controller
-        angle_control_run();
+        angle_control_run(high_jerk_z);
         break;
     }
+
  }
 
 // guided_takeoff_run - takeoff in guided mode
@@ -575,7 +576,7 @@ void Copter::ModeGuided::posvel_control_run()
 
 // guided_angle_control_run - runs the guided angle controller
 // called from guided_run
-void Copter::ModeGuided::angle_control_run()
+void Copter::ModeGuided::angle_control_run(bool high_jerk_z)
 {
     // if not auto armed or motors not enabled set throttle to zero and exit immediately
     if (!motors->armed() || !ap.auto_armed || !motors->get_interlock() || (ap.land_complete && guided_angle_state.climb_rate_cms <= 0.0f)) {
@@ -628,7 +629,7 @@ void Copter::ModeGuided::angle_control_run()
     }
 
     // call position controller
-    pos_control->set_alt_target_from_climb_rate_ff(climb_rate_cms, G_Dt, false);
+    pos_control->set_alt_target_from_climb_rate_ff(climb_rate_cms, G_Dt, false, high_jerk_z);
     pos_control->update_z_controller();
 }
 

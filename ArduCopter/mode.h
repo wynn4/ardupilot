@@ -800,7 +800,8 @@ public:
     using Copter::Mode::Mode;
 
     bool init(bool ignore_checks) override;
-    void run() override;
+    void run() override { this->run(false); };
+    void run(bool high_jerk_z);
 
     bool requires_GPS() const override { return true; }
     bool has_manual_throttle() const override { return false; }
@@ -826,7 +827,7 @@ public:
     GuidedMode mode() const { return guided_mode; }
 
     void angle_control_start();
-    void angle_control_run();
+    void angle_control_run(bool high_jerk_z = false);
 
 protected:
 
