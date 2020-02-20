@@ -62,6 +62,9 @@ public:
     virtual bool in_guided_mode() const { return false; }
     virtual bool logs_attitude() const { return false; }
 
+    //Does the mode require planck commands
+    virtual bool requires_planck() const { return false; };
+
     // return a string for this flightmode
     virtual const char *name() const = 0;
     virtual const char *name4() const = 0;
@@ -109,9 +112,6 @@ protected:
     // in modes that support landing
     void land_run_horizontal_control();
     void land_run_vertical_control(bool pause_descent = false);
-
-    //Does the mode require planck commands
-    virtual bool requires_planck() const { return false; };
 
     // return expected input throttle setting to hover:
     virtual float throttle_hover() const;
@@ -1503,7 +1503,7 @@ class ModePlanckTracking : public ModeGuided {
 public:
 
     // inherit constructor
-    using Copter::ModeGuided::Mode;
+    using ModeGuided::Mode;
 
     bool init(bool ignore_checks) override;
     void run() override;
@@ -1511,7 +1511,7 @@ public:
     bool has_manual_throttle() const override { return false; }
     bool allows_arming(bool from_gcs) const override;
     bool is_autopilot() const override { return true; }
-    virtual bool has_user_takeoff(bool must_navigate) const { return true; }
+    virtual bool has_user_takeoff(bool must_navigate) const override { return true; }
     bool do_user_takeoff_start(float final_alt_above_home) override;
     bool requires_planck() const override { return true; }
 
@@ -1529,7 +1529,7 @@ class ModePlanckRTB : public ModeGuided {
 public:
 
     // inherit constructor
-    using Copter::ModeGuided::Mode;
+    using ModeGuided::Mode;
 
     bool init(bool ignore_checks) override;
     void run() override;
@@ -1552,7 +1552,7 @@ class ModePlanckLand : public ModeGuidedNoGPS {
 public:
 
     // inherit constructor
-    using Copter::ModeGuided::Mode;
+    using ModeGuided::Mode;
 
     bool init(bool ignore_checks) override;
     void run() override;
@@ -1573,7 +1573,7 @@ class ModePlanckWingman : public ModeGuided {
 public:
 
     // inherit constructor
-    using Copter::ModeGuided::Mode;
+    using ModeGuided::Mode;
 
     bool init(bool ignore_checks) override;
     void run() override;
