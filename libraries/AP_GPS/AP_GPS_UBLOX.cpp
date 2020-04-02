@@ -1887,6 +1887,12 @@ void AP_GPS_UBLOX::clear_RTCMV3(void)
 // ublox specific healthy checks
 bool AP_GPS_UBLOX::is_healthy(void) const
 {
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+    if (gps._auto_config == AP_GPS::GPS_AUTO_CONFIG_DISABLE) {
+        // allow for fake ublox moving baseline
+        return true;
+    }
+#endif
     if ((role == AP_GPS::GPS_ROLE_MB_BASE ||
         role == AP_GPS::GPS_ROLE_MB_ROVER) &&
         !supports_F9_config()) {
