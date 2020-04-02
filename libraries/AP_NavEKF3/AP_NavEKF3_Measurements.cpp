@@ -1045,23 +1045,35 @@ float NavEKF3_core::MagDeclination(void) const
 }
 
 /*
-  update Z gyro bias. This is only used for
+  update earth frame yaw gyro bias. This is only used for
   MagCal::EXTERNAL_YAW_FALLBACK, when not flying and when we have not
-  yet done a yaw alignment. It prevents a buildup of a large Z gyro
-  bias while waiting for GPS yaw
+  yet done a yaw alignment. It prevents a buildup of a large gyro bias
+  for gyro axes that can't be corrected using the accelerometers while
+  waiting for GPS yaw
  */
 void NavEKF3_core::updateZGyroBias(void)
 {
     const float zgyro_learn_limit = radians(3);
     const AP_InertialSensor &ins = AP::ins();
-    float &zbias = stateStruct.gyro_bias.z;
-    float z_gyro = ins.get_gyro(gyro_index_active).z - (zbias / dtEkfAvg);
-    if (fabsf(z_gyro) > zgyro_learn_limit) {
+    /*
+      get corrected gyro
+     */
+    Vector3f gyro = ins.get_gyro(gyro_index_active) - (stateStruct.gyro_bias / dtEkfAvg);
+    /*
+      we want to push the corrected gyro towards zero, but only in the
+      Z earth axis. Rotate the gyro to earth frame, then zero x,y
+      components then rotate back
+     */
+    Matrix3f rot;
+    stateStruct.quat.rotation_matrix(rot);
+    gyro = rot.transposed() * gyro;
+    gyro.x = 0;
+    gyro.y = 0;
+    gyro = rot * gyro;
+    if (gyro.length_squared() > sq(zgyro_learn_limit)) {
         // more than 3 degrees/second rotation, don't update. We
         // assume the vehicle really is moving
         return;
     }
-    // slowly modify the Z bias state to bring rotation rate to
-    // zero. This corrects a 5 deg/sec bias in around 1 minute
-    stateStruct.gyro_bias.z += z_gyro * 1.0e-4 * dtEkfAvg;
+    stateStruct.gyro_bias += gyro * 1.0e-4 * dtEkfAvg;
 }
