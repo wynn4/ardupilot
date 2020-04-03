@@ -224,7 +224,11 @@ const AP_Param::GroupInfo SITL::var_info3[] = {
     AP_GROUPINFO("MAG3_DEVID",    5, SITL,  mag_devid[2], 263178),
 
     AP_GROUPINFO("LED_LAYOUT",    11, SITL, led_layout, 0),
-    AP_GROUPINFO("GPS2_HDG",      12, SITL,  gps_hdg_enabled[1], 0),
+
+    AP_GROUPINFO("GNDMOVE_SPD",   12, SITL, ground_movement_speed, 0),
+    AP_GROUPINFO("GNDMOVE_DIR",   13, SITL, ground_movement_direction, 0),
+
+    AP_GROUPINFO("GPS2_HDG",      14, SITL,  gps_hdg_enabled[1], 0),
     AP_GROUPEND
 
 };

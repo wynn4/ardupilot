@@ -189,6 +189,8 @@ public:
     AP_Int8 gps_hdg_enabled[2]; // enable the output of a NMEA heading HDT sentence or UBLOX RELPOSNED
     AP_Int32 loop_delay; // extra delay to add to every loop
     AP_Float mag_scaling; // scaling factor on first compasses
+    AP_Float ground_movement_speed;  // movement of the ground (for ship takeoff/landing)
+    AP_Float ground_movement_direction;  // direction of ground movement
     AP_Int32 mag_devid[3]; // Mag devid
 
     // EFI type
