@@ -415,6 +415,7 @@ void SITL_State::_update_gps_ubx(const struct gps_data *d, uint8_t instance)
         relposned.relPosE = rel_antenna_pos.y * 100;
         relposned.relPosD = rel_antenna_pos.z * 100;
         relposned.relPosLength = rel_antenna_pos.length() * 100;
+        relposned.accHeading = 10 * 1.0e5; // 10 degree accuracy
         relposned.relPosHeading = degrees(Vector2f(rel_antenna_pos.x, rel_antenna_pos.y).angle()) * 1.0e5;
         relposned.flags = gnssFixOK | diffSoln | carrSolnFixed | isMoving | relPosValid | relPosHeadingValid;
     }
