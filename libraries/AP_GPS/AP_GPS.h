@@ -42,6 +42,10 @@
 
 #define UNIX_OFFSET_MSEC (17000ULL * 86400ULL + 52ULL * 10ULL * AP_MSEC_PER_WEEK - GPS_LEAPSECONDS_MILLIS)
 
+#ifndef GPS_UBLOX_MOVING_BASELINE
+#define GPS_UBLOX_MOVING_BASELINE !HAL_MINIMIZE_FEATURES && GPS_MAX_RECEIVERS>1
+#endif
+
 class AP_GPS_Backend;
 
 /// @class AP_GPS
@@ -74,6 +78,11 @@ public:
         return _singleton;
     }
 
+    // allow threads to lock against GPS update
+    HAL_Semaphore &get_semaphore(void) {
+        return rsem;
+    }
+    
     // GPS driver types
     enum GPS_Type {
         GPS_TYPE_NONE  = 0,
@@ -121,9 +130,9 @@ public:
         GPS_ENGINE_AIRBORNE_4G = 8
     };
 
-   enum GPS_Config {
+    enum GPS_Config {
        GPS_ALL_CONFIGURED = 255
-   };
+    };
 
     // role for auto-config
     enum GPS_Role {
@@ -375,7 +384,7 @@ public:
     bool have_gps_yaw(void) const {
         return have_gps_yaw(primary_instance);
     }
-    
+
     // return true if the GPS is configured to provide yaw. This will
     // be true if we expect the GPS to provide yaw, even if it
     // currently is not able to provide yaw
@@ -448,6 +457,12 @@ public:
     // returns true if all GPS instances have passed all final arming checks/state changes
     bool prepare_for_arming(void);
 
+    // returns false if any GPS drivers are not performing their logging appropriately
+    bool logging_failed(void) const;
+
+    bool logging_present(void) const { return _raw_data != 0; }
+    bool logging_enabled(void) const { return _raw_data != 0; }
+
     // used to disable GPS for GPS failure testing in flight
     void force_disable(bool disable) {
         _force_disable_gps = disable;
@@ -488,6 +503,7 @@ protected:
 
 private:
     static AP_GPS *_singleton;
+    HAL_Semaphore rsem;
 
     // returns the desired gps update rate in milliseconds
     // this does not provide any guarantee that the GPS is updating at the requested
@@ -613,6 +629,9 @@ private:
 
     // used for flight testing with GPS loss
     bool _force_disable_gps;
+
+    // used to ensure we continue sending status messages if we ever detected the second GPS
+    bool has_had_second_instance;
 };
 
 namespace AP {

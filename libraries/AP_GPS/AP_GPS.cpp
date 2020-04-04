@@ -205,44 +205,50 @@ const AP_Param::GroupInfo AP_GPS::var_info[] = {
     // @DisplayName: Antenna X position offset
     // @Description: X position of the first GPS antenna in body frame. Positive X is forward of the origin. Use antenna phase centroid location if provided by the manufacturer.
     // @Units: m
-    // @Range: -10 10
+    // @Range: -5 5
+    // @Increment: 0.01
     // @User: Advanced
 
     // @Param: POS1_Y
     // @DisplayName: Antenna Y position offset
     // @Description: Y position of the first GPS antenna in body frame. Positive Y is to the right of the origin. Use antenna phase centroid location if provided by the manufacturer.
     // @Units: m
-    // @Range: -10 10
+    // @Range: -5 5
+    // @Increment: 0.01
     // @User: Advanced
 
     // @Param: POS1_Z
     // @DisplayName: Antenna Z position offset
     // @Description: Z position of the first GPS antenna in body frame. Positive Z is down from the origin. Use antenna phase centroid location if provided by the manufacturer.
     // @Units: m
-    // @Range: -10 10
+    // @Range: -5 5
+    // @Increment: 0.01
     // @User: Advanced
     AP_GROUPINFO("POS1", 16, AP_GPS, _antenna_offset[0], 0.0f),
 
+#if GPS_MAX_RECEIVERS > 1
     // @Param: POS2_X
     // @DisplayName: Antenna X position offset
     // @Description: X position of the second GPS antenna in body frame. Positive X is forward of the origin. Use antenna phase centroid location if provided by the manufacturer.
     // @Units: m
-    // @Range: -10 10
+    // @Range: -5 5
+    // @Increment: 0.01
     // @User: Advanced
 
     // @Param: POS2_Y
     // @DisplayName: Antenna Y position offset
     // @Description: Y position of the second GPS antenna in body frame. Positive Y is to the right of the origin. Use antenna phase centroid location if provided by the manufacturer.
     // @Units: m
-    // @Range: -10 10
+    // @Range: -5 5
+    // @Increment: 0.01
     // @User: Advanced
 
-#if GPS_MAX_RECEIVERS > 1
     // @Param: POS2_Z
     // @DisplayName: Antenna Z position offset
     // @Description: Z position of the second GPS antenna in body frame. Positive Z is down from the origin. Use antenna phase centroid location if provided by the manufacturer.
     // @Units: m
-    // @Range: -10 10
+    // @Range: -5 5
+    // @Increment: 0.01
     // @User: Advanced
     AP_GROUPINFO("POS2", 17, AP_GPS, _antenna_offset[1], 0.0f),
 #endif
@@ -284,12 +290,14 @@ const AP_Param::GroupInfo AP_GPS::var_info[] = {
     AP_GROUPINFO("BLEND_TC", 21, AP_GPS, _blend_tc, 10.0f),
 #endif
 
+#if GPS_UBLOX_MOVING_BASELINE
     // @Param: UBX_OPTIONS
     // @DisplayName: Ublox options
     // @Description: Additional options for UBlox backend
     // @Bitmask: 0:Use UART2 for moving baseline
     // @User: Advanced
     AP_GROUPINFO("UBX_OPTIONS", 22, AP_GPS, _ublox_options, 0),
+#endif
     
     AP_GROUPEND
 };
@@ -627,6 +635,9 @@ found_gps:
         timing[instance].last_message_time_ms = now;
         timing[instance].delta_time_ms = GPS_TIMEOUT_MS;
         new_gps->broadcast_gps_type();
+        if (instance == 1) {
+            has_had_second_instance = true;
+        }
     }
 }
 
@@ -797,6 +808,8 @@ void AP_GPS::update_instance(uint8_t instance)
  */
 void AP_GPS::update(void)
 {
+    WITH_SEMAPHORE(rsem);
+
     for (uint8_t i=0; i<GPS_MAX_RECEIVERS; i++) {
         update_instance(i);
     }
@@ -855,9 +868,9 @@ void AP_GPS::update_primary(void)
         return;
     }
 
-        if (_auto_switch == 3) {
+    if (_auto_switch == 3) {
         // always select the second GPS instance
-            primary_instance = 1;
+        primary_instance = 1;
         return;
     }
 
@@ -879,50 +892,50 @@ void AP_GPS::update_primary(void)
         }
     }
     
-            // handling switching away from blended GPS
-            if (primary_instance == GPS_BLENDED_INSTANCE) {
-                primary_instance = 0;
-                for (uint8_t i=1; i<GPS_MAX_RECEIVERS; i++) {
-                    // choose GPS with highest state or higher number of satellites
-                    if ((state[i].status > state[primary_instance].status) ||
-                        ((state[i].status == state[primary_instance].status) && (state[i].num_sats > state[primary_instance].num_sats))) {
-                        primary_instance = i;
-                        _last_instance_swap_ms = now;
-                    }
-                }
+    // handling switching away from blended GPS
+    if (primary_instance == GPS_BLENDED_INSTANCE) {
+        primary_instance = 0;
+        for (uint8_t i=1; i<GPS_MAX_RECEIVERS; i++) {
+            // choose GPS with highest state or higher number of satellites
+            if ((state[i].status > state[primary_instance].status) ||
+                ((state[i].status == state[primary_instance].status) && (state[i].num_sats > state[primary_instance].num_sats))) {
+                primary_instance = i;
+                _last_instance_swap_ms = now;
+            }
+        }
         return;
     }
 
-                // handle switch between real GPSs
-                for (uint8_t i=0; i<GPS_MAX_RECEIVERS; i++) {
-                    if (i == primary_instance) {
-                        continue;
-                    }
-                    if (state[i].status > state[primary_instance].status) {
-                        // we have a higher status lock, or primary is set to the blended GPS, change GPS
-                        primary_instance = i;
-                        _last_instance_swap_ms = now;
-                        continue;
-                    }
+    // handle switch between real GPSs
+    for (uint8_t i=0; i<GPS_MAX_RECEIVERS; i++) {
+        if (i == primary_instance) {
+            continue;
+        }
+        if (state[i].status > state[primary_instance].status) {
+            // we have a higher status lock, or primary is set to the blended GPS, change GPS
+            primary_instance = i;
+            _last_instance_swap_ms = now;
+            continue;
+        }
 
-                    bool another_gps_has_1_or_more_sats = (state[i].num_sats >= state[primary_instance].num_sats + 1);
+        bool another_gps_has_1_or_more_sats = (state[i].num_sats >= state[primary_instance].num_sats + 1);
 
-                    if (state[i].status == state[primary_instance].status && another_gps_has_1_or_more_sats) {
+        if (state[i].status == state[primary_instance].status && another_gps_has_1_or_more_sats) {
 
-                        bool another_gps_has_2_or_more_sats = (state[i].num_sats >= state[primary_instance].num_sats + 2);
+            bool another_gps_has_2_or_more_sats = (state[i].num_sats >= state[primary_instance].num_sats + 2);
 
-                        if ((another_gps_has_1_or_more_sats && (now - _last_instance_swap_ms) >= 20000) ||
-                            (another_gps_has_2_or_more_sats && (now - _last_instance_swap_ms) >= 5000)) {
-                            // this GPS has more satellites than the
-                            // current primary, switch primary. Once we switch we will
-                            // then tend to stick to the new GPS as primary. We don't
-                            // want to switch too often as it will look like a
-                            // position shift to the controllers.
-                            primary_instance = i;
-                            _last_instance_swap_ms = now;
-                        }
-                    }
-                }
+            if ((another_gps_has_1_or_more_sats && (now - _last_instance_swap_ms) >= 20000) ||
+                (another_gps_has_2_or_more_sats && (now - _last_instance_swap_ms) >= 5000)) {
+                // this GPS has more satellites than the
+                // current primary, switch primary. Once we switch we will
+                // then tend to stick to the new GPS as primary. We don't
+                // want to switch too often as it will look like a
+                // position shift to the controllers.
+                primary_instance = i;
+                _last_instance_swap_ms = now;
+            }
+        }
+    }
 #endif // GPS_BLENDED_INSTANCE
 }
 
@@ -1065,7 +1078,7 @@ uint16_t AP_GPS::gps_yaw_cdeg(uint8_t instance) const
 {
     if (!have_gps_yaw_configured(instance)) {
         return 0;
-        }
+    }
     float yaw_deg, accuracy_deg;
     if (!gps_yaw_deg(instance, yaw_deg, accuracy_deg)) {
         return 65535;
@@ -1073,9 +1086,9 @@ uint16_t AP_GPS::gps_yaw_cdeg(uint8_t instance) const
     int yaw_cd = wrap_360_cd(yaw_deg * 100);
     if (yaw_cd == 0) {
         return 36000;
-        }
-    return yaw_cd;
     }
+    return yaw_cd;
+}
 
 void AP_GPS::send_mavlink_gps_raw(mavlink_channel_t chan)
 {
@@ -1109,15 +1122,10 @@ void AP_GPS::send_mavlink_gps_raw(mavlink_channel_t chan)
 #if GPS_MAX_RECEIVERS > 1
 void AP_GPS::send_mavlink_gps2_raw(mavlink_channel_t chan)
 {
-    static uint32_t last_send_time_ms[MAVLINK_COMM_NUM_BUFFERS];
-    if (num_instances < 2 || status(1) <= AP_GPS::NO_GPS) {
+    // always send the message once we've ever seen the GPS
+    if (!has_had_second_instance) {
         return;
     }
-    // when we have a GPS then only send new data
-    if (last_send_time_ms[chan] == last_message_time_ms(1)) {
-        return;
-    }
-    last_send_time_ms[chan] = last_message_time_ms(1);
 
     const Location &loc = location(1);
     mavlink_msg_gps2_raw_send(
@@ -1724,6 +1732,20 @@ bool AP_GPS::prepare_for_arming(void) {
         }
     }
     return all_passed;
+}
+
+bool AP_GPS::logging_failed(void) const {
+    if (!logging_enabled()) {
+        return false;
+    }
+
+    for (uint8_t i = 0; i < GPS_MAX_RECEIVERS; i++) {
+        if ((drivers[i] != nullptr) && !(drivers[i]->logging_healthy())) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 namespace AP {
