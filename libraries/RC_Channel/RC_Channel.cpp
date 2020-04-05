@@ -763,6 +763,10 @@ void RC_Channel::do_aux_function(const aux_func_t ch_option, const aux_switch_po
         AP::gps().force_disable(ch_flag == HIGH);
         break;
 
+    case AUX_FUNC::GPS_YAW_DISABLE:
+        AP::gps().force_yaw_disable(ch_flag == HIGH);
+        break;
+        
     case AUX_FUNC::MOTOR_ESTOP:
         switch (ch_flag) {
         case HIGH: {
