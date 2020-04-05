@@ -379,7 +379,7 @@ public:
 
     // return true if the GPS currently has yaw available
     bool have_gps_yaw(uint8_t instance) const {
-        return state[instance].have_gps_yaw;
+        return !_force_disable_yaw && state[instance].have_gps_yaw;
     }
     bool have_gps_yaw(void) const {
         return have_gps_yaw(primary_instance);
@@ -468,6 +468,11 @@ public:
         _force_disable_gps = disable;
     }
 
+    // used to disable GPS yaw for failure testing in flight
+    void force_yaw_disable(bool disable) {
+        _force_disable_yaw = disable;
+    }
+    
     // handle possibly fragmented RTCM injection data
     void handle_gps_rtcm_fragment(uint8_t flags, const uint8_t *data, uint8_t len);
 
@@ -629,6 +634,7 @@ private:
 
     // used for flight testing with GPS loss
     bool _force_disable_gps;
+    bool _force_disable_yaw;
 
     // used to ensure we continue sending status messages if we ever detected the second GPS
     bool has_had_second_instance;
