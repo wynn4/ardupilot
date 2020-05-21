@@ -471,6 +471,7 @@ void RC_Channel::init_aux_function(const aux_func_t ch_option, const aux_switch_
     case AUX_FUNC::GRIPPER:
     case AUX_FUNC::SPRAYER:
     case AUX_FUNC::GPS_DISABLE:
+    case AUX_FUNC::GPS_YAW_DISABLE:
     case AUX_FUNC::KILL_IMU1:
     case AUX_FUNC::KILL_IMU2:
         do_aux_function(ch_option, ch_flag);
