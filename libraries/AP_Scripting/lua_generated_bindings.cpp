@@ -1,6 +1,7 @@
 // auto generated bindings, don't manually edit
 #include "lua_generated_bindings.h"
 #include "lua_boxed_numerics.h"
+#include <AP_Button/AP_Button.h>
 #include <SRV_Channel/SRV_Channel.h>
 #include <AP_SerialLED/AP_SerialLED.h>
 #include <AP_Vehicle/AP_Vehicle.h>
@@ -487,6 +488,23 @@ const luaL_Reg Location_meta[] = {
     {NULL, NULL}
 };
 
+static int AP_Button_get_button_state(lua_State *L) {
+    AP_Button * ud = AP_Button::get_singleton();
+    if (ud == nullptr) {
+        return luaL_argerror(L, 1, "button not supported on this firmware");
+    }
+
+    binding_argcheck(L, 2);
+    const lua_Integer raw_data_2 = luaL_checkinteger(L, 2);
+    luaL_argcheck(L, ((raw_data_2 >= MAX(1, 0)) && (raw_data_2 <= MIN(AP_BUTTON_NUM_PINS, UINT8_MAX))), 2, "argument out of range");
+    const uint8_t data_2 = static_cast<uint8_t>(raw_data_2);
+    const bool data = ud->get_button_state(
+            data_2);
+
+    lua_pushboolean(L, data);
+    return 1;
+}
+
 static int SRV_Channels_find_channel(lua_State *L) {
     SRV_Channels * ud = SRV_Channels::get_singleton();
     if (ud == nullptr) {
@@ -532,16 +550,16 @@ static int AP_SerialLED_set_RGB(lua_State *L) {
     const lua_Integer raw_data_2 = luaL_checkinteger(L, 2);
     luaL_argcheck(L, ((raw_data_2 >= MAX(1, 0)) && (raw_data_2 <= MIN(16, UINT8_MAX))), 2, "argument out of range");
     const uint8_t data_2 = static_cast<uint8_t>(raw_data_2);
-    const uint32_t raw_data_3 = *check_uint32_t(L, 3);
+    const uint32_t raw_data_3 = *check_uint32_t(L, 2);
     luaL_argcheck(L, ((raw_data_3 >= MAX(0U, 0U)) && (raw_data_3 <= MIN(UINT32_MAX, UINT32_MAX))), 3, "argument out of range");
     const uint32_t data_3 = static_cast<uint32_t>(raw_data_3);
-    const lua_Integer raw_data_4 = luaL_checkinteger(L, 4);
+    const lua_Integer raw_data_4 = luaL_checkinteger(L, 2);
     luaL_argcheck(L, ((raw_data_4 >= MAX(0, 0)) && (raw_data_4 <= MIN(UINT8_MAX, UINT8_MAX))), 4, "argument out of range");
     const uint8_t data_4 = static_cast<uint8_t>(raw_data_4);
-    const lua_Integer raw_data_5 = luaL_checkinteger(L, 5);
+    const lua_Integer raw_data_5 = luaL_checkinteger(L, 2);
     luaL_argcheck(L, ((raw_data_5 >= MAX(0, 0)) && (raw_data_5 <= MIN(UINT8_MAX, UINT8_MAX))), 5, "argument out of range");
     const uint8_t data_5 = static_cast<uint8_t>(raw_data_5);
-    const lua_Integer raw_data_6 = luaL_checkinteger(L, 6);
+    const lua_Integer raw_data_6 = luaL_checkinteger(L, 2);
     luaL_argcheck(L, ((raw_data_6 >= MAX(0, 0)) && (raw_data_6 <= MIN(UINT8_MAX, UINT8_MAX))), 6, "argument out of range");
     const uint8_t data_6 = static_cast<uint8_t>(raw_data_6);
     ud->set_RGB(
@@ -564,7 +582,7 @@ static int AP_SerialLED_set_num_LEDs(lua_State *L) {
     const lua_Integer raw_data_2 = luaL_checkinteger(L, 2);
     luaL_argcheck(L, ((raw_data_2 >= MAX(1, 0)) && (raw_data_2 <= MIN(16, UINT8_MAX))), 2, "argument out of range");
     const uint8_t data_2 = static_cast<uint8_t>(raw_data_2);
-    const lua_Integer raw_data_3 = luaL_checkinteger(L, 3);
+    const lua_Integer raw_data_3 = luaL_checkinteger(L, 2);
     luaL_argcheck(L, ((raw_data_3 >= MAX(0, 0)) && (raw_data_3 <= MIN(32, UINT8_MAX))), 3, "argument out of range");
     const uint8_t data_3 = static_cast<uint8_t>(raw_data_3);
     const bool data = ud->set_num_LEDs(
@@ -1663,6 +1681,11 @@ static int AP_AHRS_get_roll(lua_State *L) {
     return 1;
 }
 
+const luaL_Reg AP_Button_meta[] = {
+    {"get_button_state", AP_Button_get_button_state},
+    {NULL, NULL}
+};
+
 const luaL_Reg SRV_Channels_meta[] = {
     {"find_channel", SRV_Channels_find_channel},
     {NULL, NULL}
@@ -1811,6 +1834,7 @@ const struct userdata_meta userdata_fun[] = {
 };
 
 const struct userdata_meta singleton_fun[] = {
+    {"button", AP_Button_meta, NULL},
     {"SRV_Channels", SRV_Channels_meta, NULL},
     {"serialLED", AP_SerialLED_meta, NULL},
     {"vehicle", AP_Vehicle_meta, NULL},
@@ -1864,6 +1888,7 @@ void load_generated_bindings(lua_State *L) {
 }
 
 const char *singletons[] = {
+    "button",
     "SRV_Channels",
     "serialLED",
     "vehicle",
