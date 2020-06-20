@@ -121,7 +121,6 @@ protected:
     AP_Baro barometer;
     Compass compass;
     AP_InertialSensor ins;
-    AP_Button button;
     RangeFinder rangefinder;
 
     AP_RSSI rssi;
