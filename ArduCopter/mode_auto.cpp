@@ -121,7 +121,7 @@ void ModeAuto::run()
     case Auto_NavPayloadPlace:
         payload_place_run();
         break;
-    
+
     case Auto_PlanckTakeoff:
         planck_takeoff_run();
         break;
@@ -354,7 +354,7 @@ void ModeAuto::circle_start()
 // auto_spline_start - initialises waypoint controller to implement flying to a particular destination using the spline controller
 //  seg_end_type can be SEGMENT_END_STOP, SEGMENT_END_STRAIGHT or SEGMENT_END_SPLINE.  If Straight or Spline the next_destination should be provided
 void ModeAuto::spline_start(const Location& destination, bool stopped_at_start,
-                               AC_WPNav::spline_segment_end_type seg_end_type, 
+                               AC_WPNav::spline_segment_end_type seg_end_type,
                                const Location& next_destination)
 {
     _mode = Auto_Spline;
@@ -449,7 +449,7 @@ void ModeAuto::planck_rtb_start()
 {
     _mode = Auto_PlanckRTB;
 
-    //Tell planck to RTB 
+    //Tell planck to RTB
     copter.mode_planckrtb.init(true);
 }
 
@@ -563,7 +563,7 @@ bool ModeAuto::start_command(const AP_Mission::Mission_Command& cmd)
         // point the camera to a specified angle
         do_mount_control(cmd);
         break;
-    
+
     case MAV_CMD_DO_FENCE_ENABLE:
 #if AC_FENCE == ENABLED
         if (cmd.p1 == 0) { //disable
@@ -800,7 +800,7 @@ bool ModeAuto::verify_command(const AP_Mission::Mission_Command& cmd)
     case MAV_CMD_DO_WINCH:
         cmd_complete = true;
         break;
-    
+
     case MAV_CMD_NAV_PLANCK_TAKEOFF:
         cmd_complete = verify_planck_takeoff();
         break;
@@ -932,7 +932,7 @@ void ModeAuto::land_run()
 
     // set motors to full range
     motors->set_desired_spool_state(AP_Motors::DesiredSpoolState::THROTTLE_UNLIMITED);
-    
+
     land_run_horizontal_control();
     land_run_vertical_control();
 }
@@ -1156,24 +1156,16 @@ void ModeAuto::planck_takeoff_run()
 {
     // if not auto armed or motor interlock not enabled set throttle to zero and exit immediately
     if (!motors->armed() || !copter.ap.auto_armed || !motors->get_interlock()) {
-        // initialise wpnav targets
-        wp_nav->shift_wp_origin_to_current_pos();
-        // clear i term when we're taking off
-        set_throttle_takeoff();
+        make_safe_spool_down();
+        wp_nav->shift_takeoff_origin_to_current_pos(constrain_float(g.pilot_takeoff_alt,0.0f,1000.0f));
+        wp_nav->shift_takeoff_origin_and_destination_to_stopping_point_xy();
+        pos_control->set_limit_accel_xy();
+        pos_control->relax_velocity_controller_xy();
+        pos_control->init_baseline_velocity();
         return;
     }
 
-#if FRAME_CONFIG == HELI_FRAME
-    // helicopters stay in landed state until rotor speed runup has finished
-    if (motors->rotor_runup_complete()) {
-        set_land_complete(false);
-    } else {
-        // initialise wpnav targets
-        wp_nav->shift_wp_origin_to_current_pos();
-    }
-#else
     set_land_complete(false);
-#endif
 
     copter.mode_plancktracking.run();
 }
@@ -1911,7 +1903,7 @@ bool ModeAuto::verify_loiter_to_alt()
 // returns true with RTL has completed successfully
 bool ModeAuto::verify_RTL()
 {
-    return (copter.mode_rtl.state_complete() && 
+    return (copter.mode_rtl.state_complete() &&
     (copter.mode_rtl.state() == RTL_FinalDescent || copter.mode_rtl.state() == RTL_Land) &&
     (motors->get_spool_state() == AP_Motors::SpoolState::GROUND_IDLE));
 }
