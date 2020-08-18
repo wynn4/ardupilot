@@ -4730,6 +4730,13 @@ bool GCS_MAVLINK::accept_packet(const mavlink_status_t &status,
 
     if (!sysid_enforce()) {
         return true;
+    } else { //sysid_enforce
+        //Allow these messages through
+        if(msg.msgid == MAVLINK_MSG_ID_CHANGE_OPERATOR_CONTROL ||
+           msg.msgid == MAVLINK_MSG_ID_PARAM_REQUEST_LIST ||
+           msg.msgid == MAVLINK_MSG_ID_PARAM_REQUEST_READ) {
+            return true;
+        }
     }
 
     return false;
