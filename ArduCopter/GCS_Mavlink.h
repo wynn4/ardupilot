@@ -36,6 +36,8 @@ protected:
 
     void handle_change_operator_control_message(const mavlink_message_t &msg);
 
+    void send_operator_lock_message();
+
     bool set_home_to_current_location(bool lock) override WARN_IF_UNUSED;
     bool set_home(const Location& loc, bool lock) override WARN_IF_UNUSED;
     void send_nav_controller_output() const override;

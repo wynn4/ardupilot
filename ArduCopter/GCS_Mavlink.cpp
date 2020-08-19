@@ -532,10 +532,19 @@ bool GCS_MAVLINK_Copter::params_ready() const
     return copter.ap.initialised_params;
 }
 
+void GCS_MAVLINK_Copter::send_operator_lock_message() {
+    if(operator_control_locked) {
+      send_text(MAV_SEVERITY_INFO, "Control locked. MYGCS: %i", sysid_my_gcs());
+    } else {
+      send_text(MAV_SEVERITY_INFO, "Control unlocked. MYGCS %i", sysid_my_gcs());
+    }
+}
+
 void GCS_MAVLINK_Copter::send_banner()
 {
     GCS_MAVLINK::send_banner();
     send_text(MAV_SEVERITY_INFO, "Frame: %s", copter.get_frame_string());
+    send_operator_lock_message();
 }
 
 // a RC override message is considered to be a 'heartbeat' from the ground station for failsafe purposes
@@ -947,11 +956,7 @@ void GCS_MAVLINK_Copter::handle_change_operator_control_message(const mavlink_me
         }
     }
 
-    if(operator_control_locked) {
-      send_text(MAV_SEVERITY_INFO, "Control locked. MYGCS: %i", sysid_my_gcs());
-    } else {
-      send_text(MAV_SEVERITY_INFO, "Control unlocked. MYGCS %i", sysid_my_gcs());
-    }
+    send_operator_lock_message();
     mavlink_msg_change_operator_control_ack_send(chan, msg.sysid, packet.control_request, ack_ok ? 0 : 3);
 }
 
