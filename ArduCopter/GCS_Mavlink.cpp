@@ -926,7 +926,7 @@ void GCS_MAVLINK_Copter::handle_change_operator_control_message(const mavlink_me
     if(packet.control_request == 0) {
         //If this is a request for control, but we are locked, ignore and send a status text
         if(operator_control_locked) {
-            send_text(MAV_SEVERITY_ERROR, "GCS %i requested control but control is locked to %i", msg.sysid, sysid_my_gcs());
+            send_text(MAV_SEVERITY_ERROR, "GCS %i requested control but GCS %i has lock", msg.sysid, sysid_my_gcs());
             ack_ok = false;
         } else {
             //If the control is unlocked and we get a request, grant it and lock the control
@@ -938,7 +938,7 @@ void GCS_MAVLINK_Copter::handle_change_operator_control_message(const mavlink_me
     } else if(packet.control_request == 1) { //Release control
         //If we get a release control, but control is not locked, send a status text
         if(!operator_control_locked) {
-            send_text(MAV_SEVERITY_WARNING, "GCS %i released control, but control is not locked", msg.sysid);
+            send_text(MAV_SEVERITY_WARNING, "GCS %i released control but control is unlocked", msg.sysid);
             ack_ok = true;
         } else {
             //The release must come from the right sysid
