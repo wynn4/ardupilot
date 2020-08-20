@@ -537,7 +537,7 @@ private:
     AP_Parachute parachute{relay};
 #endif
 
-    // Button 
+    // Button
 #if BUTTON_ENABLED == ENABLED
     AP_Button button;
 #endif
@@ -1015,6 +1015,8 @@ private:
     // mode.cpp
     Mode *mode_from_mode_num(const Mode::Number mode);
     void exit_mode(Mode *&old_flightmode, Mode *&new_flightmode);
+
+    bool operator_control_locked = false;
 
 public:
     void mavlink_delay_cb();    // GCS_Mavlink.cpp

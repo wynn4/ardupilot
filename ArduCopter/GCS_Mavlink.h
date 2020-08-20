@@ -67,7 +67,4 @@ private:
     float vfr_hud_alt() const override;
 
     void send_pid_tuning() override;
-
-    bool operator_control_locked = false;
-
 };

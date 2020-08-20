@@ -433,6 +433,12 @@ void Copter::three_hz_loop()
 
     // update ch6 in flight tuning
     tuning();
+
+    //Check the age of the last time we've heard from our GCS; unlock control if its been too long
+    if(copter.operator_control_locked && ((millis() - copter.failsafe.last_heartbeat_ms) > FS_GCS_TIMEOUT_MS)) {
+        copter._gcs.send_text(MAV_SEVERITY_WARNING, "Control unlocked due to timeout. MYGCS: %i", copter.g.sysid_my_gcs);
+        copter.operator_control_locked = false;
+    }
 }
 
 // one_hz_loop - runs at 1Hz

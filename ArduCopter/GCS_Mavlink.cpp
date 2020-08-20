@@ -533,7 +533,7 @@ bool GCS_MAVLINK_Copter::params_ready() const
 }
 
 void GCS_MAVLINK_Copter::send_operator_lock_message() {
-    if(operator_control_locked) {
+    if(copter.operator_control_locked) {
       send_text(MAV_SEVERITY_INFO, "Control locked. MYGCS: %i", sysid_my_gcs());
     } else {
       send_text(MAV_SEVERITY_INFO, "Control unlocked. MYGCS %i", sysid_my_gcs());
@@ -925,32 +925,27 @@ void GCS_MAVLINK_Copter::handle_change_operator_control_message(const mavlink_me
     mavlink_msg_change_operator_control_decode(&msg, &packet);
     bool ack_ok = false;
 
-    //Check the age of the last time we've heard from our GCS; unlock if its been too long
-    if(operator_control_locked && ((millis() - copter.failsafe.last_heartbeat_ms) > FS_GCS_TIMEOUT_MS)) {
-        operator_control_locked = false;
-    }
-
     //Request for control
     if(packet.control_request == 0) {
         //If this is a request for control, but we are locked, ignore and send a status text
-        if(operator_control_locked) {
+        if(copter.operator_control_locked) {
             ack_ok = false;
         } else {
             //If the control is unlocked and we get a request, grant it and lock the control
             copter.g.sysid_my_gcs = msg.sysid;
-            operator_control_locked = true;
+            copter.operator_control_locked = true;
             ack_ok = true;
         }
     } else if(packet.control_request == 1) { //Release control
         //If we get a release control, but control is not locked, send a status text
-        if(!operator_control_locked) {
+        if(!copter.operator_control_locked) {
             ack_ok = true;
         } else {
             //The release must come from the right sysid
             if(sysid_my_gcs() != msg.sysid) {
                 ack_ok = false;
             } else { //Valid control release
-              operator_control_locked = false;
+              copter.operator_control_locked = false;
               ack_ok = true;
             }
         }
