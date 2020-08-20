@@ -935,6 +935,9 @@ void GCS_MAVLINK_Copter::handle_change_operator_control_message(const mavlink_me
             copter.g.sysid_my_gcs = msg.sysid;
             copter.operator_control_locked = true;
             ack_ok = true;
+
+            //Also reset the heartbeat timeout so we don't immediately send a message saying its unlocked
+            copter.failsafe.last_heartbeat_ms = millis();
         }
     } else if(packet.control_request == 1) { //Release control
         //If we get a release control, but control is not locked, send a status text
