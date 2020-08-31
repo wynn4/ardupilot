@@ -2160,30 +2160,39 @@ void GCS_MAVLINK::send_local_position() const
 
 void GCS::send_planck_stateinfo()
 {
+    int8_t ret = 1;
     for(uint8_t i=0; i<num_gcs(); i++) {
-        chan(i)->send_planck_stateinfo();
+        int thisret = (int8_t)chan(i)->send_planck_stateinfo();
+        if(thisret != -99) //No interval on this channel
+          ret = thisret;
     }
+    struct log_Planck_SI pkt = {
+        LOG_PACKET_HEADER_INIT(LOG_PLANCK_SI_MSG),
+        time_us  : AP_HAL::micros64(),
+        ret: ret
+    };
+    AP::logger().WriteBlock(&pkt, sizeof(pkt));
 }
 
-void GCS_MAVLINK::send_planck_stateinfo()
+int GCS_MAVLINK::send_planck_stateinfo()
 {
     //Sanity check
     uint64_t now = AP_HAL::millis64();
     if(now <= last_planck_stateinfo_sent_ms) {
         last_planck_stateinfo_sent_ms = now;
-        return;
+        return -1;
     }
 
     //Don't send if its too soon
     uint64_t interval = get_interval_for_stream(STREAM_PLANCK);
     uint64_t dt = now - last_planck_stateinfo_sent_ms;
     if((interval == 0) || (dt < (interval - interval/10))) { //within 10%
-        return;
+        return (interval == 0 ? -99 : -2);
     }
 
     //Make sure theres space
     if(!HAVE_PAYLOAD_SPACE(chan,PLANCK_STATEINFO)) {
-        return;
+        return -3;
     }
 
     uint8_t status = 0x00;
@@ -2261,6 +2270,7 @@ void GCS_MAVLINK::send_planck_stateinfo()
       vel.x,                          // X speed m/s (+ve North)
       vel.y,                          // Y speed m/s (+ve East)
       vel.z);                         // Z speed m/s (+ve up)
+    return 0;
 }
 
 /*

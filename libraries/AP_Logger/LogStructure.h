@@ -914,8 +914,8 @@ struct PACKED log_GPS_RAWS {
     uint8_t trkStat;
 };
 
-struct PACKED log_GPS_SBF_EVENT {  
-	LOG_PACKET_HEADER; 
+struct PACKED log_GPS_SBF_EVENT {
+	LOG_PACKET_HEADER;
 	uint64_t time_us;
 	uint32_t TOW;
 	uint16_t WNc;
@@ -933,7 +933,7 @@ struct PACKED log_GPS_SBF_EVENT {
 
 struct PACKED log_Esc {
     LOG_PACKET_HEADER;
-    uint64_t time_us;     
+    uint64_t time_us;
     int32_t rpm;
     uint16_t voltage;
     uint16_t current;
@@ -943,7 +943,7 @@ struct PACKED log_Esc {
 
 struct PACKED log_CSRV {
     LOG_PACKET_HEADER;
-    uint64_t time_us;     
+    uint64_t time_us;
     uint8_t id;
     float position;
     float force;
@@ -953,7 +953,7 @@ struct PACKED log_CSRV {
 
 struct PACKED log_CESC {
     LOG_PACKET_HEADER;
-    uint64_t time_us;     
+    uint64_t time_us;
     uint8_t id;
     uint32_t error_count;
     float voltage;
@@ -1224,6 +1224,12 @@ struct PACKED log_Arm_Disarm {
     uint64_t time_us;
     uint8_t  arm_state;
     uint16_t arm_checks;
+};
+
+struct PACKED log_Planck_SI {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    int8_t ret;
 };
 
 // FMT messages define all message formats other than FMT
@@ -1608,7 +1614,9 @@ struct PACKED log_Arm_Disarm {
     { LOG_WHEELENCODER_MSG, sizeof(log_WheelEncoder), \
       "WENC",  "Qfbfb", "TimeUS,Dist0,Qual0,Dist1,Qual1", "sm-m-", "F0-0-" }, \
     { LOG_ADSB_MSG, sizeof(log_ADSB), \
-      "ADSB",  "QIiiiHHhH", "TimeUS,ICAO_address,Lat,Lng,Alt,Heading,Hor_vel,Ver_vel,Squark", "s-DUmhnn-", "F-GGCBCC-" }
+      "ADSB",  "QIiiiHHhH", "TimeUS,ICAO_address,Lat,Lng,Alt,Heading,Hor_vel,Ver_vel,Squark", "s-DUmhnn-", "F-GGCBCC-" }, \
+    { LOG_PLANCK_SI_MSG, sizeof(log_Planck_SI), \
+      "PLSI",  "Qb", "TimeUS,Ret","s-","F0"}
 
 
 #define LOG_SBP_STRUCTURES \
@@ -1800,6 +1808,7 @@ enum LogMessages : uint8_t {
     LOG_ARM_DISARM_MSG,
     LOG_OA_BENDYRULER_MSG,
     LOG_OA_DIJKSTRA_MSG,
+    LOG_PLANCK_SI_MSG,
 
     _LOG_LAST_MSG_
 };
