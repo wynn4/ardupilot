@@ -6,6 +6,7 @@
 #include "AP_BattMonitor_Sum.h"
 #include "AP_BattMonitor_FuelFlow.h"
 #include "AP_BattMonitor_FuelLevel_PWM.h"
+#include "AP_BattMonitor_DJIUART.h"
 
 #include <AP_HAL/AP_HAL.h>
 
@@ -253,7 +254,7 @@ AP_BattMonitor::read()
     }
 
     check_failsafes();
-    
+
     checkPoweringOff();
 }
 

@@ -89,6 +89,10 @@
 #define AP_SERIALMANAGER_SLCAN_BUFSIZE_RX       128
 #define AP_SERIALMANAGER_SLCAN_BUFSIZE_TX       128
 
+#define AP_SERIALMANAGER_BATTERYDJIUART_BAUD    115200
+#define AP_SERIALMANAGER_BATTERYDJIUART_BUFSIZE_RX 128
+#define AP_SERIALMANAGER_BATTERYDJIUART_BUFSIZE_TX 32
+
 class AP_SerialManager {
 public:
     AP_SerialManager();
@@ -123,13 +127,14 @@ public:
         SerialProtocol_WindVane = 21,
         SerialProtocol_SLCAN = 22,
         SerialProtocol_RCIN = 23,
+        SerialProtocol_BatteryDJIUART = 24,
     };
 
     // get singleton instance
     static AP_SerialManager *get_singleton(void) {
         return _singleton;
     }
-    
+
     // init_console - initialise console at default baud rate
     void init_console();
 
@@ -154,7 +159,7 @@ public:
     // get_mavlink_protocol - provides the specific MAVLink protocol for a
     // given channel, or SerialProtocol_None if not found
     SerialProtocol get_mavlink_protocol(mavlink_channel_t mav_chan) const;
-    
+
     // set_blocking_writes_all - sets block_writes on or off for all serial channels
     void set_blocking_writes_all(bool blocking);
 
@@ -172,7 +177,7 @@ public:
 
 private:
     static AP_SerialManager *_singleton;
-    
+
     // array of uart info
     struct UARTState {
         AP_Int8 protocol;

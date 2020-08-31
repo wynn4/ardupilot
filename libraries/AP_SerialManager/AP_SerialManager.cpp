@@ -80,7 +80,7 @@ const AP_Param::GroupInfo AP_SerialManager::var_info[] = {
 
     // @Param: 0_PROTOCOL
     // @DisplayName: Console protocol selection
-    // @Description: Control what protocol to use on the console. 
+    // @Description: Control what protocol to use on the console.
     // @Values: 1:MAVlink1, 2:MAVLink2
     // @User: Standard
     // @RebootRequired: True
@@ -173,7 +173,7 @@ const AP_Param::GroupInfo AP_SerialManager::var_info[] = {
 #endif
 
     // index 11 used by 0_PROTOCOL
-        
+
 #if SERIALMANAGER_NUM_PORTS > 6
     // @Param: 6_PROTOCOL
     // @DisplayName: Serial6 protocol selection
@@ -297,7 +297,7 @@ const AP_Param::GroupInfo AP_SerialManager::var_info[] = {
     // @RebootRequired: True
     AP_GROUPINFO("7_OPTIONS",  25, AP_SerialManager, state[7].options, 0),
 #endif
-    
+
     AP_GROUPEND
 };
 
@@ -372,7 +372,7 @@ void AP_SerialManager::init()
         init_console();
     }
 #endif
-    
+
     // initialise serial ports
     for (uint8_t i=1; i<SERIALMANAGER_NUM_PORTS; i++) {
 
@@ -389,7 +389,7 @@ void AP_SerialManager::init()
                 case SerialProtocol_Console:
                 case SerialProtocol_MAVLink:
                 case SerialProtocol_MAVLink2:
-                    state[i].uart->begin(map_baudrate(state[i].baud), 
+                    state[i].uart->begin(map_baudrate(state[i].baud),
                                          AP_SERIALMANAGER_MAVLINK_BUFSIZE_RX,
                                          AP_SERIALMANAGER_MAVLINK_BUFSIZE_TX);
                     break;
@@ -406,7 +406,7 @@ void AP_SerialManager::init()
                     break;
                 case SerialProtocol_GPS:
                 case SerialProtocol_GPS2:
-                    state[i].uart->begin(map_baudrate(state[i].baud), 
+                    state[i].uart->begin(map_baudrate(state[i].baud),
                                          AP_SERIALMANAGER_GPS_BUFSIZE_RX,
                                          AP_SERIALMANAGER_GPS_BUFSIZE_TX);
                     break;
@@ -473,7 +473,16 @@ void AP_SerialManager::init()
                     AP::RC().add_uart(state[i].uart);
                     break;
 #endif
-                    
+
+                case SerialProtocol_BatteryDJIUART:
+                  state[i].baud = AP_SERIALMANAGER_BATTERYDJIUART_BAUD / 1000;
+                  state[i].uart->begin(
+                    AP_SERIALMANAGER_BATTERYDJIUART_BAUD,
+                    AP_SERIALMANAGER_BATTERYDJIUART_BUFSIZE_RX,
+                    AP_SERIALMANAGER_BATTERYDJIUART_BUFSIZE_TX);
+                  state[i].uart->set_flow_control(AP_HAL::UARTDriver::FLOW_CONTROL_DISABLE);
+                  break;
+
                 default:
                     state[i].uart->begin(map_baudrate(state[i].baud));
             }
