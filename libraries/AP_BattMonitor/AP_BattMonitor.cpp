@@ -147,6 +147,9 @@ AP_BattMonitor::init()
             case AP_BattMonitor_Params::BattMonitor_TYPE_FuelLevel_PWM:
                 drivers[instance] = new AP_BattMonitor_FuelLevel_PWM(*this, state[instance], _params[instance]);
                 break;
+            case AP_BattMonitor_Params::BattMonitor_TYPE_DJIUART:
+                drivers[instance] = new AP_BattMonitor_DJIUART(*this, state[instance], _params[instance]);
+                break;
             case AP_BattMonitor_Params::BattMonitor_TYPE_NONE:
             default:
                 break;

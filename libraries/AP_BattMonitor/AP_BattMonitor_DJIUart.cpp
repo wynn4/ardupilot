@@ -15,6 +15,7 @@
 
 
 #include <AP_HAL/AP_HAL.h>
+#include <AP_SerialManager/AP_SerialManager.h>
 #include "AP_BattMonitor_DJIUART.h"
 
 extern const AP_HAL::HAL &hal;
@@ -24,32 +25,36 @@ void AP_BattMonitor_DJIUART::init(void)
     const AP_SerialManager &serial_manager = AP::serialmanager();
 
     // check for protocol configured for a serial port - only the first serial port with one of these protocols will then run (cannot have FrSky on multiple serial ports)
-    _port = serial_manager.find_serial(AP_SerialManager::SerialProtocol_BatteryDJIUART, 0));
+    _port = serial_manager.find_serial(AP_SerialManager::SerialProtocol_BatteryDJIUART, 0);
 
-    if (_port != nullptr) {
-    }
+    _state.healthy = false;
 }
 
 void AP_BattMonitor_DJIUART::read(void)
 {
+    //Request message
+    const uint8_t request_status_msg[] = {0xab, 0x0e, 0x00, 0x22, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xd4};
     if(_port == nullptr) {
         return; //Nothing to do here
     }
 
-    //Send a request for new data every second
+    //Send a request for new data 2x second
     uint64_t now = AP_HAL::micros64();
     if(now >= _next_request_t_us) {
         //Send a request on the port
-        _port->send();
-        _next_request_t_us = now + 1E6;
+        _port->write(request_status_msg,sizeof(request_status_msg));
+        _next_request_t_us = now + 5E5;
     }
 
     //Read some bytes from the serial
-    uint32_t available = port->available();
+    uint32_t available = _port->available();
     for(uint32_t i=0; i<available; ++i) {
       uint8_t b = _port->read();
       _parse(b);
     }
+
+    //Look at the last update, determine the health based on a timeout
+    _state.healthy = (now - _state.last_time_micros) < 250000U;
 }
 
 void AP_BattMonitor_DJIUART::_parse(uint8_t b) {
@@ -89,15 +94,37 @@ void AP_BattMonitor_DJIUART::_parse(uint8_t b) {
 
 void AP_BattMonitor_DJIUART::_decode() {
     //If this is a response (0x22) message, check its validity then pull out votlage/soc/current/etc data
-    if(_rx_buffer[3] == 0x22) {
-        int soc = rxbuf[17] | (rxbuf[18]<<8);
-        int current = rxbuf[9] | (rxbuf[10]<<8);
-        int filtcurrent = rxbuf[13] | (rxbuf[14]<<8);
-        int cells[4];
-        cells[0] = rxbuf[19] | (rxbuf[20]<<8);
-        cells[1] = rxbuf[21] | (rxbuf[22]<<8);
-        cells[2] = rxbuf[23] | (rxbuf[24]<<8);
-        cells[3] = rxbuf[25] | (rxbuf[26]<<8);
-    }
+    if(_rx_buffer[3] == 0x22 && _this_msg_len == 37) {
+        uint32_t now = AP_HAL::micros();
 
+        uint16_t cells[4];
+        //First 4 bytes are header data
+        uint16_t temperature = _rx_buffer[5] | (_rx_buffer[6] << 8);
+        uint16_t voltage =     _rx_buffer[7] | (_rx_buffer[8] << 8);
+        //int32_t current =      _rx_buffer[9] | (_rx_buffer[10] << 8) | (_rx_buffer[11] << 16) | (_rx_buffer[12] << 24);
+        int32_t curr_filt =    _rx_buffer[13] | (_rx_buffer[14] << 8) | (_rx_buffer[15] << 16) | (_rx_buffer[16] << 24);
+        uint16_t soc =         _rx_buffer[17] | (_rx_buffer[18]<<8);
+        cells[0] =             _rx_buffer[19] | (_rx_buffer[20]<<8);
+        cells[1] =             _rx_buffer[21] | (_rx_buffer[22]<<8);
+        cells[2] =             _rx_buffer[23] | (_rx_buffer[24]<<8);
+        cells[3] =             _rx_buffer[25] | (_rx_buffer[26]<<8);
+        uint8_t power_stat =   _rx_buffer[31];
+
+        _state.voltage = voltage/1.E3;
+        _state.current_amps = curr_filt/1.E3;
+        _state.cell_voltages.cells[0] = cells[0];
+        _state.cell_voltages.cells[1] = cells[1];
+        _state.cell_voltages.cells[2] = cells[2];
+        _state.cell_voltages.cells[3] = cells[3];
+        _state.temperature = temperature/1.E2;
+        _state.is_powering_off = (power_stat == 0xFF);
+        if(!_state.is_powering_off) {
+            _state.powerOffNotified = false; //Reset the flag
+        }
+
+        _pct_remaining = (uint8_t)soc;
+        _state.last_time_micros = _state.temperature_time = now;
+
+        //hal.console->printf("SOC: %i (%fV/%fA) [ %f,%f,%f,%f ] temp: %f powering_off: %02X\n",soc,_state.voltage,_state.current_amps,cells[0]/1.e3,cells[1]/1.e3,cells[2]/1.e3,cells[3]/1.e3,_state.temperature,power_stat);
+    }
 }

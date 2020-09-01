@@ -17,6 +17,7 @@ public:
     void read() override;
     bool has_current() const override { return true; };
     bool has_cell_voltages() const override { return true; };
+    uint8_t capacity_remaining_pct() const override { return _pct_remaining; };
 
 private:
     AP_HAL::UARTDriver *_port;
@@ -33,8 +34,11 @@ private:
     };
     uint8_t _parse_state = PARSE_STATE_IDLE;
 
-    const uint8_t RX_BUFFER_LEN=128;
+    static const uint8_t RX_BUFFER_LEN=128;
     uint8_t _rx_buffer[RX_BUFFER_LEN];
     uint8_t _rx_buffer_idx = 0;
     uint8_t _this_msg_len = 0;
+    uint8_t _this_msg_received_len = 0;
+
+    uint8_t _pct_remaining = 0;
 };
