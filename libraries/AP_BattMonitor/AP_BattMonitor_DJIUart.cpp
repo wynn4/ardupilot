@@ -123,7 +123,8 @@ void AP_BattMonitor_DJIUART::_decode() {
         }
 
         _pct_remaining = (uint8_t)soc;
-        _state.last_time_micros = _state.temperature_time = now;
+        _state.last_time_micros = now;
+        _state.temperature_time = AP_HAL::millis();
 
         //hal.console->printf("SOC: %i (%fV/%fA) [ %f,%f,%f,%f ] temp: %f powering_off: %02X\n",soc,_state.voltage,_state.current_amps,cells[0]/1.e3,cells[1]/1.e3,cells[2]/1.e3,cells[3]/1.e3,_state.temperature,power_stat);
     }
