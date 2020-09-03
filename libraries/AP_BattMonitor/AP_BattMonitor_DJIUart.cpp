@@ -26,14 +26,16 @@ void AP_BattMonitor_DJIUART::init(void)
 
     // check for protocol configured for a serial port - only the first serial port with one of these protocols will then run (cannot have FrSky on multiple serial ports)
     _port = serial_manager.find_serial(AP_SerialManager::SerialProtocol_BatteryDJIUART, 0);
-
     _state.healthy = false;
+    _got_type_response = false;
 }
 
 void AP_BattMonitor_DJIUART::read(void)
 {
     //Request message
-    const uint8_t request_status_msg[] = {0xab, 0x0e, 0x00, 0x22, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xd4};
+    const uint8_t request_status_msg[] = {0xab, 0x0e, 0x00, STATUS_MSG_ID, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xd4};
+    const uint8_t request_type_msg[] =   {0xab, 0x0e, 0x00, TYPE_MSG_ID,   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x6c};
+
     if(_port == nullptr) {
         return; //Nothing to do here
     }
@@ -44,6 +46,9 @@ void AP_BattMonitor_DJIUART::read(void)
         //Send a request on the port
         _port->write(request_status_msg,sizeof(request_status_msg));
         _next_request_t_us = now + 5E5;
+        if(!_got_type_response) {
+          _port->write(request_type_msg,sizeof(request_type_msg));
+        }
     }
 
     //Read some bytes from the serial
@@ -54,7 +59,10 @@ void AP_BattMonitor_DJIUART::read(void)
     }
 
     //Look at the last update, determine the health based on a timeout
-    _state.healthy = (now - _state.last_time_micros) < 250000U;
+    _state.healthy = (AP_HAL::micros() - _state.last_time_micros) < 2000000U;
+    if(!_state.healthy) {
+        _got_type_response = false; //Be sure to re-request the type data if the battery times out
+    }
 }
 
 void AP_BattMonitor_DJIUART::_parse(uint8_t b) {
@@ -69,21 +77,35 @@ void AP_BattMonitor_DJIUART::_parse(uint8_t b) {
         case PARSE_STATE_IDLE:
           if(b == 0xAB) {
               _parse_state = PARSE_STATE_GOT_START;
-              _this_msg_received_len = 1;
           }
           break;
-        case PARSE_STATE_GOT_START:
-          _this_msg_len = b;
-          _parse_state = PARSE_STATE_GOT_LEN;
-          _this_msg_received_len++;
-          break;
-        case PARSE_STATE_GOT_LEN:
-          if(++_this_msg_received_len >= _this_msg_len) {
-              //Received a full message, decode it
-              _decode();
 
+        case PARSE_STATE_GOT_START:
+          //Sanity check, len must be > 6 bytes, can't be more than, lets say 100 bytes
+          if(b <= 6 || b>=100) {
               _parse_state = PARSE_STATE_IDLE;
-              _this_msg_len = 0;
+              _rx_buffer_idx = 0;
+          }
+
+          _parse_state = PARSE_STATE_GOT_LEN;
+          break;
+
+        case PARSE_STATE_GOT_LEN:
+          if(_rx_buffer_idx >= _rx_buffer[1]) { //_rx_buffer[1] is the length
+              //TODO: verify the CRC (once we figure out the CRC algo...)
+
+              //Received a full message, decode it
+              switch(_rx_buffer[3]) {
+                  case TYPE_MSG_ID:
+                    _handle_type_message();
+                    break;
+                  case STATUS_MSG_ID:
+                    _handle_status_message();
+                    break;
+                  default:
+                    break;
+              }
+              _parse_state = PARSE_STATE_IDLE;
               _rx_buffer_idx = 0;
           }
           break;
@@ -92,40 +114,53 @@ void AP_BattMonitor_DJIUART::_parse(uint8_t b) {
     }
 }
 
-void AP_BattMonitor_DJIUART::_decode() {
-    //If this is a response (0x22) message, check its validity then pull out votlage/soc/current/etc data
-    if(_rx_buffer[3] == 0x22 && _this_msg_len == 37) {
-        uint32_t now = AP_HAL::micros();
+void AP_BattMonitor_DJIUART::_handle_type_message() {
+    if(_rx_buffer[3] != TYPE_MSG_ID || _rx_buffer[1] != TYPE_MSG_LEN) {
+        return;
+    }
 
-        uint16_t cells[4];
-        //First 4 bytes are header data
-        uint16_t temperature = _rx_buffer[5] | (_rx_buffer[6] << 8);
-        uint16_t voltage =     _rx_buffer[7] | (_rx_buffer[8] << 8);
-        //int32_t current =      _rx_buffer[9] | (_rx_buffer[10] << 8) | (_rx_buffer[11] << 16) | (_rx_buffer[12] << 24);
-        int32_t curr_filt =    _rx_buffer[13] | (_rx_buffer[14] << 8) | (_rx_buffer[15] << 16) | (_rx_buffer[16] << 24);
-        uint16_t soc =         _rx_buffer[17] | (_rx_buffer[18]<<8);
-        cells[0] =             _rx_buffer[19] | (_rx_buffer[20]<<8);
-        cells[1] =             _rx_buffer[21] | (_rx_buffer[22]<<8);
-        cells[2] =             _rx_buffer[23] | (_rx_buffer[24]<<8);
-        cells[3] =             _rx_buffer[25] | (_rx_buffer[26]<<8);
-        uint8_t power_stat =   _rx_buffer[31];
+   _nom_capacity_amps =  (float)(_rx_buffer[9]  | (_rx_buffer[10] << 8))/1.E3;
+   _nom_voltage =        (float)(_rx_buffer[11] | (_rx_buffer[12] << 8))/1.E3;
 
-        _state.voltage = voltage/1.E3;
-        _state.current_amps = curr_filt/1.E3;
-        _state.cell_voltages.cells[0] = cells[0];
-        _state.cell_voltages.cells[1] = cells[1];
-        _state.cell_voltages.cells[2] = cells[2];
-        _state.cell_voltages.cells[3] = cells[3];
-        _state.temperature = temperature/1.E2;
-        _state.is_powering_off = (power_stat == 0xFF);
-        if(!_state.is_powering_off) {
-            _state.powerOffNotified = false; //Reset the flag
-        }
+   _params._pack_capacity = (int32_t)(_nom_capacity_amps*1.E3);
+   _params._serial_number = (int32_t)(_rx_buffer[17] | (_rx_buffer[18] << 8));
+   _got_type_response = true;
+}
 
-        _pct_remaining = (uint8_t)soc;
-        _state.last_time_micros = now;
-        _state.temperature_time = AP_HAL::millis();
+void AP_BattMonitor_DJIUART::_handle_status_message() {
+    if(_rx_buffer[3] != STATUS_MSG_ID || _rx_buffer[1] != STATUS_MSG_LEN) {
+        return;
+    }
 
-        //hal.console->printf("SOC: %i (%fV/%fA) [ %f,%f,%f,%f ] temp: %f powering_off: %02X\n",soc,_state.voltage,_state.current_amps,cells[0]/1.e3,cells[1]/1.e3,cells[2]/1.e3,cells[3]/1.e3,_state.temperature,power_stat);
+    //First 4 bytes are header data
+    uint16_t temperature =          _rx_buffer[5] | (_rx_buffer[6] << 8);
+    uint16_t voltage =              _rx_buffer[7] | (_rx_buffer[8] << 8);
+    //int32_t current =             _rx_buffer[9] | (_rx_buffer[10] << 8) | (_rx_buffer[11] << 16) | (_rx_buffer[12] << 24);
+    int32_t curr_filt =             _rx_buffer[13] | (_rx_buffer[14] << 8) | (_rx_buffer[15] << 16) | (_rx_buffer[16] << 24);
+    uint16_t soc =                  _rx_buffer[17] | (_rx_buffer[18]<<8);
+    _state.cell_voltages.cells[0] = _rx_buffer[19] | (_rx_buffer[20]<<8);
+    _state.cell_voltages.cells[1] = _rx_buffer[21] | (_rx_buffer[22]<<8);
+    _state.cell_voltages.cells[2] = _rx_buffer[23] | (_rx_buffer[24]<<8);
+    _state.cell_voltages.cells[3] = _rx_buffer[25] | (_rx_buffer[26]<<8);
+    uint8_t power_stat =            _rx_buffer[31];
+
+    _state.voltage = voltage/1.E3;
+    _state.current_amps = -1. * (curr_filt/1.E3); //Reports a negative current.
+    _state.temperature = temperature/1.E2;
+    _state.is_powering_off = (power_stat == 0xFF);
+    if(!_state.is_powering_off) {
+        _state.powerOffNotified = false; //Reset the flag
+    }
+
+    _pct_remaining = (uint8_t)soc;
+    _state.last_time_micros = AP_HAL::micros();
+    _state.temperature_time = AP_HAL::millis();
+
+    //Update the consumed mah/wh based on the SoC %, capacity and voltage
+    if(_got_type_response) {
+        float soc_pct = (float)soc/100.;
+        float nom_wattage = (float)_nom_capacity_amps * _nom_voltage;
+        _state.consumed_mah = (float)_nom_capacity_amps * 1.E3 * (1. - soc_pct);
+        _state.consumed_wh = nom_wattage * (1. - soc_pct);
     }
 }

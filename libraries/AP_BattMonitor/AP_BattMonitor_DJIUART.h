@@ -18,6 +18,7 @@ public:
     bool has_current() const override { return true; };
     bool has_cell_voltages() const override { return true; };
     uint8_t capacity_remaining_pct() const override { return _pct_remaining; };
+    bool reset_remaining(float percentage) override { return false; }; //We maintain the percentage
 
 private:
     AP_HAL::UARTDriver *_port;
@@ -25,7 +26,9 @@ private:
     uint64_t _next_request_t_us = 0;
 
     void _parse(uint8_t b);
-    void _decode();
+
+    void _handle_type_message();
+    void _handle_status_message();
 
     enum {
         PARSE_STATE_IDLE,
@@ -34,11 +37,18 @@ private:
     };
     uint8_t _parse_state = PARSE_STATE_IDLE;
 
+    static const uint8_t TYPE_MSG_ID = 0x21;
+    static const uint8_t TYPE_MSG_LEN = 45;
+    static const uint8_t STATUS_MSG_ID = 0x22;
+    static const uint8_t STATUS_MSG_LEN = 37;
+
     static const uint8_t RX_BUFFER_LEN=128;
     uint8_t _rx_buffer[RX_BUFFER_LEN];
     uint8_t _rx_buffer_idx = 0;
-    uint8_t _this_msg_len = 0;
-    uint8_t _this_msg_received_len = 0;
 
     uint8_t _pct_remaining = 0;
+    float _nom_capacity_amps = 0;
+    float _nom_voltage = 0;
+
+    bool _got_type_response = false;
 };
