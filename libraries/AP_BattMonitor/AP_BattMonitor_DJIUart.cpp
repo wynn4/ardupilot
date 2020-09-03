@@ -68,6 +68,7 @@ void AP_BattMonitor_DJIUART::read(void)
 void AP_BattMonitor_DJIUART::_parse(uint8_t b) {
     if(_rx_buffer_idx >= (RX_BUFFER_LEN - 1)) {
         _rx_buffer_idx = 0; //Wrap the buffer index
+        memset(_rx_buffer,0,RX_BUFFER_LEN);
     }
 
     //Push a byte into the buffer
@@ -77,6 +78,8 @@ void AP_BattMonitor_DJIUART::_parse(uint8_t b) {
         case PARSE_STATE_IDLE:
           if(b == 0xAB) {
               _parse_state = PARSE_STATE_GOT_START;
+          } else {
+              _rx_buffer_idx = 0;
           }
           break;
 
@@ -86,7 +89,6 @@ void AP_BattMonitor_DJIUART::_parse(uint8_t b) {
               _parse_state = PARSE_STATE_IDLE;
               _rx_buffer_idx = 0;
           }
-
           _parse_state = PARSE_STATE_GOT_LEN;
           break;
 
