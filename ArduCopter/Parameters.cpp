@@ -368,6 +368,14 @@ const AP_Param::Info Copter::var_info[] = {
     // @User: Advanced
     ASCALAR(angle_max, "ANGLE_MAX",                 DEFAULT_ANGLE_MAX),
 
+    // @Param: PLANCK_ANGLE_MAX
+    // @DisplayName: Planck Angle Max
+    // @Description: Maximum lean angle in planck flight modes
+    // @Units: cdeg
+    // @Range: 1000 8000
+    // @User: Advanced
+    ASCALAR(planck_angle_max, "PLANCK_ANGLE_MAX",                 DEFAULT_PLANCK_ANGLE_MAX),
+
     // @Param: PHLD_BRAKE_RATE
     // @DisplayName: PosHold braking rate
     // @Description: PosHold flight mode's rotation rate during braking in deg/sec
@@ -1082,7 +1090,7 @@ const AP_Param::ConversionInfo conversion_table[] = {
     { Parameters::k_param_arming_check_old,   0,      AP_PARAM_INT8,  "ARMING_CHECK" },
     // battery
     { Parameters::k_param_fs_batt_voltage,    0,      AP_PARAM_FLOAT,  "BATT_LOW_VOLT" },
-    { Parameters::k_param_fs_batt_mah,        0,      AP_PARAM_FLOAT,  "BATT_LOW_MAH" },
+  //  { Parameters::k_param_fs_batt_mah,        0,      AP_PARAM_FLOAT,  "BATT_LOW_MAH" },
     { Parameters::k_param_failsafe_battery_enabled,0, AP_PARAM_INT8,   "BATT_FS_LOW_ACT" },
 
     { Parameters::Parameters::k_param_ch7_option_old,   0,      AP_PARAM_INT8,  "RC7_OPTION" },

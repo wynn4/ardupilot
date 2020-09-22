@@ -423,6 +423,8 @@ private:
         uint8_t ekf                 : 1; // true if ekf failsafe has occurred
         uint8_t terrain             : 1; // true if the missing terrain data failsafe has occurred
         uint8_t adsb                : 1; // true if an adsb related failsafe has occurred
+        uint8_t lean                : 1; // true if a lean-angle failsafe has occurred
+        uint8_t thr2wt              : 1; // true if a thrust-to-weight failsafe has occurred
     } failsafe;
 
     bool any_failsafe_triggered() const {
@@ -747,6 +749,8 @@ private:
     void failsafe_terrain_set_status(bool data_ok);
     void failsafe_terrain_on_event();
     void gpsglitch_check();
+    void failsafe_lean_check(uint32_t duration_ms);
+    void failsafe_lean_on_event();
     void set_mode_RTL_or_land_with_pause(ModeReason reason);
     void set_mode_SmartRTL_or_RTL(ModeReason reason);
     void set_mode_SmartRTL_or_land_with_pause(ModeReason reason);

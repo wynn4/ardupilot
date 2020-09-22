@@ -306,6 +306,44 @@ void Copter::gpsglitch_check()
     }
 }
 
+// executes lean-angle failsafe if lean angle is too high for longer than a set threshold
+// indicates the wind is too high to fly safely in planck mode
+void Copter::failsafe_lean_check(uint32_t duration_ms)
+{
+    // trigger with X seconds of failures while in a PLANCK mode
+    bool valid_mode = (control_mode == Mode::Number::PLANCKTRACK ||
+                       control_mode == Mode::Number::PLANCKRTB ||
+                       control_mode == Mode::Number::PLANCKLAND ||
+                       control_mode == Mode::Number::PLANCKWINGMAN);
+    bool timeout = (duration_ms) > FS_LEAN_TIMEOUT_MS;
+    bool trigger_event = valid_mode && timeout;
+
+    // check for clearing of event
+    if (trigger_event != failsafe.lean) {
+        if (trigger_event) {
+            failsafe_lean_on_event();
+        } else {
+            AP::logger().Write_Error(LogErrorSubsystem::FAILSAFE_LEAN, LogErrorCode::ERROR_RESOLVED);
+            failsafe.lean = false;
+        }
+    }
+}
+
+// terrain failsafe action
+void Copter::failsafe_lean_on_event()
+{
+    failsafe.terrain = true;
+    gcs().send_text(MAV_SEVERITY_CRITICAL,"Failsafe: Lean angle high");
+    AP::logger().Write_Error(LogErrorSubsystem::FAILSAFE_LEAN, LogErrorCode::FAILSAFE_OCCURRED);
+
+    if (should_disarm_on_failsafe()) {
+        arming.disarm();
+    } else {
+        //set_mode_RTL_or_land_with_pause(ModeReason::LEAN_FAILSAFE);
+        set_mode_planck_RTB_or_planck_land(ModeReason::LEAN_FAILSAFE);
+    }
+}
+
 // set_mode_RTL_or_land_with_pause - sets mode to RTL if possible or LAND with 4 second delay before descent starts
 //  this is always called from a failsafe so we trigger notification to pilot
 void Copter::set_mode_RTL_or_land_with_pause(ModeReason reason)
