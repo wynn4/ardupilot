@@ -425,7 +425,6 @@ private:
         uint8_t terrain             : 1; // true if the missing terrain data failsafe has occurred
         uint8_t adsb                : 1; // true if an adsb related failsafe has occurred
         uint8_t lean                : 1; // true if a lean-angle failsafe has occurred
-        uint8_t thr2wt              : 1; // true if a thrust-to-weight failsafe has occurred
     } failsafe;
 
     bool any_failsafe_triggered() const {
