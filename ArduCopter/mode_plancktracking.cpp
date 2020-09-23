@@ -193,7 +193,7 @@ void ModePlanckTracking::run() {
       }
     }
 
-    if (attitude_control->lean_angle()*100 > attitude_control->lean_angle_max()){
+    if (attitude_control->lean_angle()*100 > attitude_control->planck_lean_angle_max()){
       if(_high_lean_start_ms<=0)
       {
         _high_lean_start_ms = AP_HAL::millis();
@@ -203,7 +203,6 @@ void ModePlanckTracking::run() {
     else{
       _high_lean_start_ms = 0;
     }
-
 
     //Run the guided mode controller
     ModeGuided::run(true); //use high-jerk

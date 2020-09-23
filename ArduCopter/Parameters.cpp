@@ -376,6 +376,14 @@ const AP_Param::Info Copter::var_info[] = {
     // @User: Advanced
     ASCALAR(planck_angle_max, "PLANCK_ANGLE_MAX",                 DEFAULT_PLANCK_ANGLE_MAX),
 
+    // @Param: PLANCK_ANGLE_TO
+    // @DisplayName: Planck Angle Timeout
+    // @Description: Time above PLANCK_ANGLE_MAX before triggering failsafe
+    // @Units: milliseconds
+    // @Range: 0 60000
+    // @User: Advanced
+    GSCALAR(planck_angle_fs_to, "PLANCK_ANG_FS_TO",                 FS_LEAN_TIMEOUT_MS),
+
     // @Param: PHLD_BRAKE_RATE
     // @DisplayName: PosHold braking rate
     // @Description: PosHold flight mode's rotation rate during braking in deg/sec
