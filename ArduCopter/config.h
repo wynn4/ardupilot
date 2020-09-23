@@ -602,7 +602,7 @@
 #endif
 
 #ifndef DEFAULT_PLANCK_ANGLE_MAX
- # define DEFAULT_PLANCK_ANGLE_MAX         4500            // ANGLE_MAX parameters default value
+ # define DEFAULT_PLANCK_ANGLE_MAX         1200            // PLANCK_ANGLE_MAX parameters default value
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
