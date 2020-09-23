@@ -193,15 +193,13 @@ void ModePlanckTracking::run() {
       }
     }
 
-    if (attitude_control->lean_angle()*100 > attitude_control->planck_lean_angle_max()){
-      if(_high_lean_start_ms<=0)
-      {
-        _high_lean_start_ms = AP_HAL::millis();
-      }
-      copter.failsafe_lean_check(AP_HAL::millis() - _high_lean_start_ms);
+    if (g.failsafe_planck_angle > 0){
+        copter.failsafe_lean_check(AP_HAL::millis() - _high_lean_start_ms);
     }
-    else{
-      _high_lean_start_ms = 0;
+    else if(copter.failsafe.lean > 0){
+        copter.failsafe.lean = false;
+        copter.failsafe.lean_high_time_ms = 0;
+        AP::logger().Write_Error(LogErrorSubsystem::FAILSAFE_LEAN, LogErrorCode::ERROR_RESOLVED);
     }
 
     //Run the guided mode controller

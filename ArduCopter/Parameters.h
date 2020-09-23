@@ -112,8 +112,8 @@ public:
         k_param_gps_hdop_good,
         k_param_battery,
         k_param_planck_angle_max,       //k_param_fs_batt_mah,            // unused - moved to AP_BattMonitor
-        k_param_planck_angle_fs_to,         // remove
-        k_param_rssi_range,             // unused, replaced by rssi_ library parameters
+        k_param_planck_angle_fs_to,     // remove
+        k_param_failsafe_planck_angle,             // unused, replaced by rssi_ library parameters
         k_param_rc_feel_rp,             // deprecated
         k_param_NavEKF,                 // deprecated - remove
         k_param_mission,                // mission library
@@ -408,7 +408,8 @@ public:
     AP_Int16        poshold_brake_rate;         // PosHold flight mode's rotation rate during braking in deg/sec
     AP_Int16        poshold_brake_angle_max;    // PosHold flight mode's max lean angle during braking in centi-degrees
 
-    AP_Int16        planck_angle_fs_to;    // Planck flight mode's max lean angle timeout for checking high wind
+    AP_Int8         failsafe_planck_angle; // Planck lean angle failsafe behavior
+    AP_Int32        planck_angle_fs_to;    // Planck flight mode's max lean angle timeout for checking high wind
     
     // Waypoints
     //
