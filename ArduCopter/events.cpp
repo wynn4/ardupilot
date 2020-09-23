@@ -362,7 +362,7 @@ void Copter::failsafe_lean_on_event()
                 desired_action = Failsafe_Action_None;
         }
 
-    // Conditions to deviate from FS_GCS_ENABLE parameter setting
+    // Conditions to deviate from FS_PLANCK_ANGLE_DISABLED parameter setting
     if (!motors->armed()) {
         desired_action = Failsafe_Action_None;
         gcs().send_text(MAV_SEVERITY_WARNING, "Lean Angle Failsafe");
