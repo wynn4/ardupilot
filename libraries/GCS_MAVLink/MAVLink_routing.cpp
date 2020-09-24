@@ -147,6 +147,14 @@ bool MAVLink_routing::check_and_forward(mavlink_channel_t in_channel, const mavl
             continue;
         }
 
+        //Don't forward param list or param requests to ACE
+        if(routes[i].compid == PLANCK_CTRL_COMP_ID) {
+            if(msg.msgid == MAVLINK_MSG_ID_PARAM_REQUEST_LIST ||
+               msg.msgid == MAVLINK_MSG_ID_PARAM_REQUEST_READ) {
+                   continue;
+               }
+        }
+
         if (broadcast_system || (target_system == routes[i].sysid &&
                                  (broadcast_component || 
                                   target_component == routes[i].compid ||

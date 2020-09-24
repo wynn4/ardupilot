@@ -4734,7 +4734,9 @@ bool GCS_MAVLINK::accept_packet(const mavlink_status_t &status,
         //Allow these messages through
         if(msg.msgid == MAVLINK_MSG_ID_CHANGE_OPERATOR_CONTROL ||
            msg.msgid == MAVLINK_MSG_ID_PARAM_REQUEST_LIST ||
-           msg.msgid == MAVLINK_MSG_ID_PARAM_REQUEST_READ) {
+           msg.msgid == MAVLINK_MSG_ID_PARAM_REQUEST_READ ||
+           msg.msgid == MAVLINK_MSG_ID_MISSION_REQUEST_INT ||
+           msg.msgid == MAVLINK_MSG_ID_MISSION_REQUEST_LIST) {
             return true;
         }
     }
