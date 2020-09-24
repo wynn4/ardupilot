@@ -325,7 +325,7 @@ void Copter::failsafe_lean_check(uint16_t duration_ms)
         failsafe.lean_high_time_ms = 0;
     }
 
-    bool timeout = uint16_t(AP_HAL::millis()-failsafe.lean_high_time_ms) > g.planck_angle_fs_to;
+    bool timeout = (AP_HAL::millis() - failsafe.lean_high_time_ms) > g.planck_angle_fs_to;
     bool trigger_event = valid_mode && timeout;
 
     // check for clearing of event

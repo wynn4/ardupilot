@@ -228,9 +228,9 @@ enum HarmonicNotchDynamicMode {
 #define FS_EKF_ACTION_LAND_EVEN_STABILIZE   3       // switch to Land mode on EKF failsafe even if in a manual flight mode like stabilize
 
 // Lean angle failsafe definitions (FS_PLANCK_ANGLE parameter)
-#define FS_PLANCK_ANGLE_DISABLED                            0
-#define FS_PLANCK_ANGLE_ENABLED_PLANCK_TRACK_PLANCK_LAND                  1
-#define FS_PLANCK_ANGLE_WARN                            2
+#define FS_PLANCK_ANGLE_DISABLED                          0
+#define FS_PLANCK_ANGLE_ENABLED_PLANCK_TRACK_PLANCK_LAND  1
+#define FS_PLANCK_ANGLE_WARN                              2
 
 // for mavlink SET_POSITION_TARGET messages
 #define MAVLINK_SET_POS_TYPE_MASK_POS_IGNORE      ((1<<0) | (1<<1) | (1<<2))

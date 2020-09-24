@@ -111,7 +111,7 @@ public:
         k_param_angle_max,
         k_param_gps_hdop_good,
         k_param_battery,
-        k_param_planck_angle_max,       //k_param_fs_batt_mah,            // unused - moved to AP_BattMonitor
+        k_param_planck_angle_max,       // Planck parameter, takes the slot of k_param_fs_batt_mah, which was not used/moved to AP_BattMonitor
         k_param_planck_angle_fs_to,     // remove
         k_param_failsafe_planck_angle,             // unused, replaced by rssi_ library parameters
         k_param_rc_feel_rp,             // deprecated
