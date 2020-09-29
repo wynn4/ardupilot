@@ -193,8 +193,8 @@ void ModePlanckTracking::run() {
       }
     }
 
-    if (g.failsafe_planck_angle > 0){
-        copter.failsafe_lean_check(AP_HAL::millis() - _high_lean_start_ms);
+    if (g.failsafe_planck_angle != FS_PLANCK_ANGLE_DISABLED){
+        copter.failsafe_lean_check();
     }
     else if(copter.failsafe.lean > 0){
         copter.failsafe.lean = false;
