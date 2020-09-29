@@ -749,7 +749,7 @@ private:
     void failsafe_terrain_set_status(bool data_ok);
     void failsafe_terrain_on_event();
     void gpsglitch_check();
-    void failsafe_lean_check(uint16_t duration_ms);
+    void failsafe_lean_check();
     void failsafe_lean_on_event();
     void set_mode_RTL_or_land_with_pause(ModeReason reason);
     void set_mode_SmartRTL_or_RTL(ModeReason reason);

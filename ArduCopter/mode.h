@@ -1522,7 +1522,6 @@ protected:
 
     //if we want to land or transition to planck_land when we get back
     bool _land_when_ready = false;
-    uint32_t _high_lean_start_ms = 0; //time in ms when lean angle started being too high;
 };
 
 class ModePlanckRTB : public ModeGuided {

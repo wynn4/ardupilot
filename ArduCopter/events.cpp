@@ -308,7 +308,7 @@ void Copter::gpsglitch_check()
 
 // executes lean-angle failsafe if lean angle is too high for longer than a set threshold
 // indicates the wind is too high to fly safely in planck mode
-void Copter::failsafe_lean_check(uint16_t duration_ms)
+void Copter::failsafe_lean_check()
 {
     // trigger with X seconds of failures while in a PLANCK mode
     bool valid_mode = (control_mode == Mode::Number::PLANCKTRACK ||
@@ -325,7 +325,7 @@ void Copter::failsafe_lean_check(uint16_t duration_ms)
         failsafe.lean_high_time_ms = 0;
     }
 
-    bool timeout = (AP_HAL::millis() - failsafe.lean_high_time_ms) > g.planck_angle_fs_to;
+    bool timeout = (failsafe.lean_high_time_ms > 0) && ((AP_HAL::millis() - failsafe.lean_high_time_ms) > uint32_t(g.planck_angle_fs_to));
     bool trigger_event = valid_mode && timeout;
 
     // check for clearing of event
