@@ -1,5 +1,8 @@
 #include "Copter.h"
 #include <AP_BLHeli/AP_BLHeli.h>
+//#include <AP_HAL/AP_HAL.h>
+#include <AP_HAL/I2CDevice.h>
+//#include <AP_HAL/utility/OwnPtr.h>
 
 /*****************************************************************************
 *   The init_ardupilot function processes everything we need for an in - air restart
@@ -256,6 +259,15 @@ void Copter::init_ardupilot()
     BoardConfig.init_safety();
 
     hal.console->printf("\nReady to FLY ");
+
+    //Force the fan on
+    AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev = hal.i2c_mgr->get_device(0, 0x82, 100000, true, 20);
+    if(dev) {
+        if(!dev->write_register(0x03, 0xFE)) //IO0 output
+          hal.console->printf("\nFailed to set GPIO expander IO direction\n");
+        if(!dev->write_register(0x01, 0x01)) //High
+          hal.console->printf("\nFailed to set GPIO expander IO output\n");
+    }
 
     // flag that initialisation has completed
     ap.initialised = true;
