@@ -354,7 +354,15 @@ void Copter::set_mode_planck_RTB_or_planck_land(ModeReason reason)
       if(!set_mode(Mode::Number::PLANCKLAND, reason))
       {
           gcs().send_text(MAV_SEVERITY_WARNING, "Planck land unavailable");
-          set_mode(Mode::Number::PLANCKRTB,reason);
+          if(!copter.planck_interface.get_commbox_state() || !copter.position_ok())
+          {
+              gcs().send_text(MAV_SEVERITY_WARNING, "Planck land and RTB unavailable, using APM Land");
+              set_mode_land_with_pause(reason);
+          }
+          else
+          {
+              set_mode(Mode::Number::PLANCKRTB,reason);
+          }
       }
       else
       {
@@ -363,8 +371,18 @@ void Copter::set_mode_planck_RTB_or_planck_land(ModeReason reason)
   }
   else
   {
-      set_mode(Mode::Number::PLANCKRTB,reason);
-      AP_Notify::events.failsafe_mode_change = 1;
+
+    if(!copter.planck_interface.get_commbox_state() || !copter.position_ok())
+    {
+        gcs().send_text(MAV_SEVERITY_WARNING, "Planck RTB unavailable, using APM Land");
+        set_mode_land_with_pause(reason);
+    }
+    else
+    {
+        set_mode(Mode::Number::PLANCKRTB,reason);
+        AP_Notify::events.failsafe_mode_change = 1;
+    }
+
   }
 }
 

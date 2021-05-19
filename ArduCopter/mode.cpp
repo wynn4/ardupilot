@@ -582,7 +582,10 @@ void Mode::land_run_vertical_control(bool pause_descent)
     }
 
     // update altitude target and call position controller
-    pos_control->set_alt_target_from_climb_rate_ff(cmb_rate, G_Dt, true);
+//    pos_control->set_alt_target_from_climb_rate_ff(cmb_rate, G_Dt, true);
+
+    // Hack for AVEM to command zero descent rate but ignoare alt.
+    pos_control->set_alt_target(inertial_nav.get_altitude());
     pos_control->update_z_controller();
 }
 
@@ -650,6 +653,14 @@ void Mode::land_run_horizontal_control()
 
     // process roll, pitch inputs
     loiter_nav->set_pilot_desired_acceleration(target_roll, target_pitch, G_Dt);
+
+    Vector2f current_pos;
+
+    // for AVEM, hack to get zero vel GPS commands, by setting target pos to current pos.
+    current_pos.x = inertial_nav.get_position().x;
+    current_pos.y = inertial_nav.get_position().y;
+    pos_control->set_xy_target(current_pos.x, current_pos.y);
+
 
     // run loiter controller
     loiter_nav->update();
