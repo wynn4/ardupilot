@@ -141,6 +141,14 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
       _tag_est.timestamp_us = pl.ap_timestamp_us;
     }
 
+  case MAVLINK_MSG_ID_PLANCK_DECK_TETHER_STATUS:
+  {
+    mavlink_planck_deck_tether_status_t ts;
+    mavlink_msg_planck_deck_tether_status_decode(mav_msg, &ts);
+    _tether_status.timestamp_ms = AP_HAL::millis();
+    _tether_status.high_tension = (bool)(ts.SPOOL_STATUS==PLANCK_DECK_SPOOL_LOCKED && ts.CABLE_TENSION > 75);
+  }
+
     default:
       break;
   }

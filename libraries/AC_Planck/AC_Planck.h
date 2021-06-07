@@ -44,6 +44,8 @@ public:
   bool get_commbox_state() { return _status.commbox_ok && _status.commbox_gps_ok && _status.tracking_commbox_gps; };
   bool get_tag_tracking_state() { return _status.tracking_tag; };
 
+  bool is_tether_high_tension() { return _tether_status.high_tension; };
+
   //oneshot _was_at_location
   bool at_location() { bool tmp(_was_at_location); _was_at_location = false; return tmp; };
 
@@ -101,6 +103,12 @@ private:
     bool at_location = false;
     uint32_t timestamp_ms = 0;
   }_status;
+
+  struct
+  {
+    bool high_tension = false;
+    uint32_t timestamp_ms = 0;
+  }_tether_status;
 
   struct
   {
