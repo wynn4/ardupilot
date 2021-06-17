@@ -76,6 +76,15 @@ void Copter::update_land_detector()
         // if we have a healthy rangefinder only allow landing detection below 2 meters
         bool rangefinder_check = (!rangefinder_alt_ok() || rangefinder_state.alt_cm_filt.get() < LAND_RANGEFINDER_MIN_ALT_CM);
 
+        AP::logger().Write("LDTR", "TimeUS,Tll,Itmm,Accs,Drl,Thrm,trmm", "QBBBBff",
+                                       AP_HAL::micros64(),
+                                 (uint8_t)motors->limit.throttle_lower,
+                                 (uint8_t)attitude_control->is_throttle_mix_min(),
+                                 (uint8_t)accel_stationary,
+                                 (uint8_t)descent_rate_low,
+                           (float)attitude_control->get_throttle_mix(),
+                           (float)attitude_control->get_throttle_mix_min());
+
         if (motor_at_lower_limit && accel_stationary && descent_rate_low && rangefinder_check) {
             // landed criteria met - increment the counter and check if we've triggered
             if( land_detector_count < ((float)LAND_DETECTOR_TRIGGER_SEC)*scheduler.get_loop_rate_hz()) {

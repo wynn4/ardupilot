@@ -381,6 +381,10 @@ void Copter::exit_mode(Mode *&old_flightmode,
         mode_planckland.exit();
     }
 
+//    if (old_flightmode == &mode_land) {
+//        mode_land.exit();
+//    }
+
 #if FRAME_CONFIG == HELI_FRAME
     // firmly reset the flybar passthrough to false when exiting acro mode.
     if (old_flightmode == &mode_acro) {
@@ -581,11 +585,13 @@ void Mode::land_run_vertical_control(bool pause_descent)
         }
     }
 
+    cmb_rate = -40;
     // update altitude target and call position controller
-//    pos_control->set_alt_target_from_climb_rate_ff(cmb_rate, G_Dt, true);
+    pos_control->set_alt_target_from_climb_rate_ff(cmb_rate, G_Dt, true);
 
     // Hack for AVEM to command zero descent rate but ignoare alt.
-    pos_control->set_alt_target(inertial_nav.get_altitude());
+//    pos_control->set_alt_target(inertial_nav.get_altitude());
+//    pos_control->set_alt_target_from_climb_rate_only(-10,G_Dt,true);
     pos_control->update_z_controller();
 }
 

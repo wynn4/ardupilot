@@ -116,6 +116,16 @@ void Copter::failsafe_gcs_check()
 {
     bool planck_ok = true; //No commbox GPS failsafe for AVEMIndago
 
+    if(copter.planck_interface.is_tether_high_tension() && !copter.planck_interface.get_tether_high_tension_flag()){
+      gcs().send_text(MAV_SEVERITY_INFO,  "Tether Tension Mode Change: High Tension");
+      copter.planck_interface.set_tether_high_tension_flag(true);
+    }
+    else if(!copter.planck_interface.is_tether_high_tension() && copter.planck_interface.get_tether_high_tension_flag()){
+      gcs().send_text(MAV_SEVERITY_INFO,  "Tether Tension Mode Change: Nominal");
+      copter.planck_interface.set_tether_high_tension_flag(false);
+    }
+
+
     // Bypass GCS failsafe checks if disabled or GCS never connected
     if (g.failsafe_gcs == FS_GCS_DISABLED || failsafe.last_heartbeat_ms == 0) {
         if(planck_ok || g.failsafe_gcs == FS_GCS_DISABLED) {
@@ -354,15 +364,15 @@ void Copter::set_mode_planck_RTB_or_planck_land(ModeReason reason)
       if(!set_mode(Mode::Number::PLANCKLAND, reason))
       {
           gcs().send_text(MAV_SEVERITY_WARNING, "Planck land unavailable");
-          if(!copter.planck_interface.get_commbox_state() || !copter.position_ok())
-          {
-              gcs().send_text(MAV_SEVERITY_WARNING, "Planck land and RTB unavailable, using APM Land");
-              set_mode_land_with_pause(reason);
-          }
-          else
-          {
+//          if(!copter.planck_interface.get_commbox_state() || !copter.position_ok())
+//          {
+//              gcs().send_text(MAV_SEVERITY_WARNING, "Planck land and RTB unavailable, using APM Land");
+//              set_mode_land_with_pause(reason);
+//          }
+//          else
+//          {
               set_mode(Mode::Number::PLANCKRTB,reason);
-          }
+//          }
       }
       else
       {
@@ -372,16 +382,16 @@ void Copter::set_mode_planck_RTB_or_planck_land(ModeReason reason)
   else
   {
 
-    if(!copter.planck_interface.get_commbox_state() || !copter.position_ok())
-    {
-        gcs().send_text(MAV_SEVERITY_WARNING, "Planck RTB unavailable, using APM Land");
-        set_mode_land_with_pause(reason);
-    }
-    else
-    {
+//    if(!copter.planck_interface.get_commbox_state() || !copter.position_ok())
+//    {
+//        gcs().send_text(MAV_SEVERITY_WARNING, "Planck RTB unavailable, using APM Land");
+//        set_mode_land_with_pause(reason);
+//    }
+//    else
+//    {
         set_mode(Mode::Number::PLANCKRTB,reason);
         AP_Notify::events.failsafe_mode_change = 1;
-    }
+//    }
 
   }
 }

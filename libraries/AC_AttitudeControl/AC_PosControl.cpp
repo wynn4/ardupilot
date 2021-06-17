@@ -350,6 +350,20 @@ void AC_PosControl::set_alt_target_from_climb_rate(float climb_rate_cms, float d
     _vel_desired.z = climb_rate_cms;
 }
 
+void AC_PosControl::set_alt_target_from_climb_rate_only(float climb_rate_cms, float dt, bool force_descend)
+{
+    // adjust desired alt if motors have not hit their limits
+    // To-Do: add check of _limit.pos_down?
+//    if ((climb_rate_cms < 0 && (!_motors.limit.throttle_lower || force_descend)) || (climb_rate_cms > 0 && !_motors.limit.throttle_upper && !_limit.pos_up)) {
+//        _pos_target.z += climb_rate_cms * dt;
+//    }
+    _pos_target.z = _inav.get_altitude() + climb_rate_cms * dt;
+    // do not use z-axis desired velocity feed forward
+    // vel_desired set to desired climb rate for reporting and land-detector
+    _flags.use_desvel_ff_z = true;
+    _vel_desired.z = climb_rate_cms;
+}
+
 /// set_alt_target_from_climb_rate_ff - adjusts target up or down using a climb rate in cm/s using feed-forward
 ///     should be called continuously (with dt set to be the expected time between calls)
 ///     actual position target will be moved no faster than the speed_down and speed_up

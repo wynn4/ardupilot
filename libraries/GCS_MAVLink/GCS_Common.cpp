@@ -2193,7 +2193,7 @@ void GCS_MAVLINK::send_planck_stateinfo()
     if(landed_state() != MAV_LANDED_STATE_ON_GROUND)
       status |= 0x02;
 
-    if(vehicle_system_status() == MAV_STATE_CRITICAL)
+    if(vehicle_system_status() == MAV_STATE_CRITICAL || high_tension())
       status |= 0x04;
 
     const AP_AHRS &ahrs = AP::ahrs();

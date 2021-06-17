@@ -886,11 +886,14 @@ public:
     bool landing_gear_should_be_deployed() const override { return true; };
 
     void do_not_use_GPS();
-
+    void exit();
 protected:
 
     const char *name() const override { return "LAND"; }
     const char *name4() const override { return "LAND"; }
+
+    float _kpz_nom = 1;
+    float _imax_nom = 5;
 
 private:
 

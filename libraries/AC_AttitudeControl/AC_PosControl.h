@@ -103,6 +103,8 @@ public:
     ///     set force_descend to true during landing to allow target to move low enough to slow the motors
     virtual void set_alt_target_from_climb_rate(float climb_rate_cms, float dt, bool force_descend);
 
+    virtual void set_alt_target_from_climb_rate_only(float climb_rate_cms, float dt, bool force_descend);
+
     /// set_alt_target_from_climb_rate_ff - adjusts target up or down using a climb rate in cm/s using feed-forward
     ///     should be called continuously (with dt set to be the expected time between calls)
     ///     actual position target will be moved no faster than the speed_down and speed_up

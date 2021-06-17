@@ -633,9 +633,13 @@ void ModeGuided::angle_control_run(bool high_jerk_z)
     }
 
     // call position controller
-    //Hack for AVEM to command zero descent rate but ignoare alt if in high tension
-    if(copter.planck_interface.is_tether_high_tension()){
+    //Hack for AVEM to command zero descent rate (and force zero alt error) if tether has timed out
+    if(copter.planck_interface.is_tether_timed_out() || (!copter.position_ok() && !copter.planck_interface.get_tag_tracking_state())){
+      pos_control->set_alt_target_from_climb_rate_ff(climb_rate_cms, G_Dt, false, high_jerk_z);
+
       pos_control->set_alt_target(inertial_nav.get_altitude());
+//      pos_control->set_alt_target_from_climb_rate_only(climb_rate_cms,G_Dt,true);
+
     }
     else{
       pos_control->set_alt_target_from_climb_rate_ff(climb_rate_cms, G_Dt, false, high_jerk_z);

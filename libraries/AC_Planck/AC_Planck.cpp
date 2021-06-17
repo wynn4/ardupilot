@@ -1,6 +1,7 @@
 #include <AC_Planck/AC_Planck.h>
 #include <AP_HAL/AP_HAL.h>
 #include "../ArduCopter/defines.h"
+#include <stdio.h>
 
 void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const mavlink_message_t *mav_msg,
     AP_AHRS &ahrs)
@@ -139,6 +140,7 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
       _tag_est.tag_att_cd.z = ToDeg(pl.yaw) * 100.;
 
       _tag_est.timestamp_us = pl.ap_timestamp_us;
+      break;
     }
 
   case MAVLINK_MSG_ID_PLANCK_DECK_TETHER_STATUS:
@@ -147,6 +149,18 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
     mavlink_msg_planck_deck_tether_status_decode(mav_msg, &ts);
     _tether_status.timestamp_ms = AP_HAL::millis();
     _tether_status.high_tension = (bool)(ts.SPOOL_STATUS==PLANCK_DECK_SPOOL_LOCKED && ts.CABLE_TENSION > 75);
+    _tether_status.cable_out = ts.CABLE_OUT;
+//    char msg_string[64];
+//    snprintf(msg_string, 64 "got deck msg SS %u CT %u ht %u co %3.2f \n",ts.SPOOL_STATUS,ts.CABLE_TENSION,_tether_status.high_tension,ts.CABLE_OUT);
+
+//gcs().send_text(MAV_SEVERITY_INFO,  "got deck msg SS %u CT %u ht %u co %3.2f \n",ts.SPOOL_STATUS,ts.CABLE_TENSION,_tether_status.high_tension,ts.CABLE_OUT);
+//    printf(" got MAVLINK_MSG_ID_PLANCK_DECK_TETHER_STATUS message SPOOL_STATUS %u CABLE_TENSION %u high_tension %u cable_out %f \n",ts.SPOOL_STATUS,ts.CABLE_TENSION,_tether_status.high_tension,ts.CABLE_OUT);
+    AP::logger().Write("PDTS", "TimeUS,TSct,TSss,tsHT,tsCO", "QBBBf",
+                                   AP_HAL::micros64(),
+                             (uint8_t)ts.CABLE_TENSION,
+                             (uint8_t)ts.SPOOL_STATUS,
+                             (uint8_t)_tether_status.high_tension,
+                             (float)_tether_status.cable_out);
   }
 
     default:

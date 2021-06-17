@@ -59,6 +59,8 @@ private:
     MAV_MODE base_mode() const override;
     MAV_STATE vehicle_system_status() const override;
 
+    bool high_tension() const override;
+
     int16_t vfr_hud_throttle() const override;
     float vfr_hud_alt() const override;
 

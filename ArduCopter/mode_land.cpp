@@ -18,6 +18,12 @@ bool ModeLand::init(bool ignore_checks)
         loiter_nav->init_target(stopping_point);
     }
 
+//    if(copter.pos_control->get_accel_z_pid().imax()!= _imax_nom){
+//      _imax_nom = copter.pos_control->get_accel_z_pid().imax();
+//    }
+
+//    copter.pos_control->get_accel_z_pid().imax(1);
+
     // initialize vertical speeds and leash lengths
     pos_control->set_max_speed_z(wp_nav->get_default_speed_down(), wp_nav->get_default_speed_up());
     pos_control->set_max_accel_z(wp_nav->get_accel_z());
@@ -160,4 +166,10 @@ void Copter::set_mode_land_with_pause(ModeReason reason)
 bool Copter::landing_with_GPS()
 {
     return (control_mode == Mode::Number::LAND && land_with_gps);
+}
+
+// perform cleanup required when leaving planck land mode
+void ModeLand::exit()
+{
+    copter.pos_control->get_accel_z_pid().imax(_imax_nom);
 }

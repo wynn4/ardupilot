@@ -20,6 +20,7 @@ bool ModePlanckLand::init(bool ignore_checks){
             copter.g.land_speed : copter.pos_control->get_max_speed_down()))/100.;
       copter.planck_interface.request_land(land_velocity);
       copter.pos_control->get_pos_z_p().kP(g.planck_land_kp_z);
+//      copter.pos_control->get_accel_z_pid().imax(1);
       return true;
     }
     return false;
