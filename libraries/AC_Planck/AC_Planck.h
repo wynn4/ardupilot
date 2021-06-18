@@ -45,8 +45,9 @@ public:
   bool get_commbox_state() { return _status.commbox_ok && _status.commbox_gps_ok && _status.tracking_commbox_gps; };
   bool get_tag_tracking_state() { return _status.tracking_tag; };
 
-  bool is_tether_high_tension() { return _tether_status.high_tension ||( (AP_HAL::millis()-_tether_status.timestamp_ms) > 5000); };
+  bool is_tether_high_tension() { return _tether_status.high_tension; };//||( (AP_HAL::millis()-_tether_status.timestamp_ms) > 5000); };
   bool is_tether_timed_out() { return ( (AP_HAL::millis()-_tether_status.timestamp_ms) > 5000); };
+  uint32_t get_tether_status_timestamp_ms() {return _tether_status.timestamp_ms;};
 
   bool get_tether_high_tension_flag() {return _tether_status.high_tension_flag;};
   void set_tether_high_tension_flag(bool is_high_tension) { _tether_status.high_tension_flag = is_high_tension;};

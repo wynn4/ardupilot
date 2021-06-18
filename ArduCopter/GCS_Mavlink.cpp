@@ -74,7 +74,7 @@ uint32_t GCS_Copter::custom_mode() const
 
 bool GCS_MAVLINK_Copter::high_tension() const
 {
-    return copter.planck_interface.is_tether_high_tension();
+    return copter.planck_interface.is_tether_high_tension() || (AP_HAL::millis() - copter.planck_interface.get_tether_status_timestamp_ms()) > copter.g.planck_emergency_reaquire_timeout ;
 }
 
 MAV_STATE GCS_MAVLINK_Copter::vehicle_system_status() const

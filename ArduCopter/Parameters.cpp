@@ -430,6 +430,20 @@ const AP_Param::Info Copter::var_info[] = {
     // @User: Advanced
     GSCALAR(planck_land_kp_z, "PLANCK_LAND_KP_Z",                 PLANCK_LAND_KP_ALT),
 
+    // @Param: PLANCK_EMERGENCY_THROTTLE
+    // @DisplayName: Planck Emergency Throttle Setting
+    // @Description: Fixed throttle setting when comms or pos ref is lost
+    // @Range: 0 1
+    // @User: Advanced
+    GSCALAR(planck_emergency_throttle, "PLANCK_EMT_THR",                 PLANCK_EMT_THR),
+
+    // @Param: PLANCK_EMERGENCY_REACQ_TIMEOUT
+    // @DisplayName: Planck Emergency Reacuire Timeout
+    // @Description: Time to re-acquire tag/pos-ref before switching to high tension
+    // @Range: 0 1000
+    // @User: Advanced
+    GSCALAR(planck_emergency_reaquire_timeout, "PLANCK_EMT_AQTO",                 PLANCK_EMT_AQTO),
+
     // @Param: ACRO_RP_P
     // @DisplayName: Acro Roll and Pitch P gain
     // @Description: Converts pilot roll and pitch into a desired rate of rotation in ACRO and SPORT mode.  Higher values mean faster rate of rotation.
