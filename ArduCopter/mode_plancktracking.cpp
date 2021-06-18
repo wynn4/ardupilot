@@ -249,7 +249,9 @@ void ModePlanckTracking::run() {
     if(tether_likely_failed){
       if(!copter.planck_interface.get_tag_tracking_state())
       {
-        copter.set_mode_land_with_pause( ModeReason::UNKNOWN);
+       // copter.set_mode_land_with_pause( ModeReason::UNKNOWN);
+        gcs().send_text(MAV_SEVERITY_INFO,  "TETHER LIKELY FAILED WITH NO TAG APM LAND!!!");
+
       }
     }
 }
