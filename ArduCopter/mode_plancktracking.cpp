@@ -223,6 +223,35 @@ void ModePlanckTracking::run() {
 
     //Run the guided mode controller
     ModeGuided::run(true); //use high-jerk
+    Location current_loc;
+    ahrs.get_position(current_loc);
+    int32_t alt_above_home_cm = 0;
+
+    if(!current_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME, alt_above_home_cm))
+    {
+      float posD;
+      ahrs.get_relative_position_D_home(posD);
+        alt_above_home_cm = -posD*100;
+    }
+    bool tether_likely_failed = copter.planck_interface.is_tether_high_tension()
+        && ((alt_above_home_cm- copter.planck_interface.get_locked_alt_cm()) > 100 || (copter.planck_interface.get_tag_pos().z - copter.planck_interface.get_locked_tag_alt_cm() > 100))
+        && copter.planck_interface.is_tether_high_tension()
+        && (AP_HAL::millis() - copter.planck_interface.get_high_tension_timestamp_ms()) > 15000;
+
+    if((copter.planck_interface.is_tether_timed_out()
+       || (!copter.position_ok() && !copter.planck_interface.get_tag_tracking_state())
+       || copter.planck_interface.get_tether_high_tension_flag()) && !tether_likely_failed){
+      attitude_control->set_throttle_out(g.planck_emergency_throttle,
+                                         true,
+                                         g.throttle_filt);
+
+    }
+    if(tether_likely_failed){
+      if(!copter.planck_interface.get_tag_tracking_state())
+      {
+        copter.set_mode_land_with_pause( ModeReason::UNKNOWN);
+      }
+    }
 }
 
 bool ModePlanckTracking::do_user_takeoff_start(float final_alt_above_home)

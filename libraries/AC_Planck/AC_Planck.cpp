@@ -148,7 +148,26 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
     mavlink_planck_deck_tether_status_t ts;
     mavlink_msg_planck_deck_tether_status_decode(mav_msg, &ts);
     _tether_status.timestamp_ms = AP_HAL::millis();
-    _tether_status.high_tension = (bool)(ts.SPOOL_STATUS==PLANCK_DECK_SPOOL_LOCKED && ts.CABLE_TENSION > 75);
+    bool high_tension =  (bool)(ts.SPOOL_STATUS==PLANCK_DECK_SPOOL_LOCKED && ts.CABLE_TENSION > 75);
+    if (!high_tension){
+      _tether_status.high_tension_timestamp_ms = AP_HAL::millis();
+      if(_status.tracking_tag)
+      {
+      _tether_status.high_tension_tag_alt_cm = _tag_est.tag_pos_cm.z;
+      }
+      Location current_loc;
+      ahrs.get_position(current_loc);
+      int32_t alt_above_home_cm = 0;
+
+      if(!current_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME, alt_above_home_cm))
+      {
+        float posD;
+        ahrs.get_relative_position_D_home(posD);
+          alt_above_home_cm = -posD*100;
+      }
+      _tether_status.high_tension_alt_cm = alt_above_home_cm;
+    }
+    _tether_status.high_tension = high_tension;
     _tether_status.cable_out = ts.CABLE_OUT;
 //    char msg_string[64];
 //    snprintf(msg_string, 64 "got deck msg SS %u CT %u ht %u co %3.2f \n",ts.SPOOL_STATUS,ts.CABLE_TENSION,_tether_status.high_tension,ts.CABLE_OUT);

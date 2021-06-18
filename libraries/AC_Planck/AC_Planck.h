@@ -48,10 +48,14 @@ public:
   bool is_tether_high_tension() { return _tether_status.high_tension; };//||( (AP_HAL::millis()-_tether_status.timestamp_ms) > 5000); };
   bool is_tether_timed_out() { return ( (AP_HAL::millis()-_tether_status.timestamp_ms) > 5000); };
   uint32_t get_tether_status_timestamp_ms() {return _tether_status.timestamp_ms;};
+  uint32_t get_high_tension_timestamp_ms() {return _tether_status.high_tension_timestamp_ms;};
 
   bool get_tether_high_tension_flag() {return _tether_status.high_tension_flag;};
   void set_tether_high_tension_flag(bool is_high_tension) { _tether_status.high_tension_flag = is_high_tension;};
   float get_tether_cable_out_m() { return _tether_status.cable_out * .3048; };
+
+  float get_locked_alt_cm(){return _tether_status.high_tension_alt_cm;};
+  float get_locked_tag_alt_cm(){return _tether_status.high_tension_tag_alt_cm;};
 
   //oneshot _was_at_location
   bool at_location() { bool tmp(_was_at_location); _was_at_location = false; return tmp; };
@@ -116,6 +120,9 @@ private:
     bool high_tension = false;
     bool high_tension_flag = false;
     float cable_out = 0;
+    float high_tension_tag_alt_cm =0;
+    float high_tension_alt_cm =0;
+    uint32_t high_tension_timestamp_ms = 0;
     uint32_t timestamp_ms = 0;
   }_tether_status;
 

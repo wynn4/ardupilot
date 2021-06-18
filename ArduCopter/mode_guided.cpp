@@ -547,15 +547,54 @@ void ModeGuided::posvel_control_run()
     }
 
     // advance position target using velocity target
-    guided_pos_target_cm += guided_vel_target_cms * dt;
+//    guided_pos_target_cm += guided_vel_target_cms * dt;
 
     // send position and velocity targets to position controller
-    pos_control->set_pos_target(guided_pos_target_cm);
-    pos_control->set_desired_velocity_xy(guided_vel_target_cms.x, guided_vel_target_cms.y);
+//    pos_control->set_pos_target(guided_pos_target_cm);
+//    pos_control->set_desired_velocity_xy(guided_vel_target_cms.x, guided_vel_target_cms.y);
 
     // run position controllers
-    pos_control->update_xy_controller();
-    pos_control->update_z_controller();
+//    pos_control->update_xy_controller();
+
+
+    // tether likely failed if:
+    //its in high tension
+    //AND 10 m higher than it was when it went into high tension
+    //AND it's been in high tension for longer than 15 seconds.
+    Location current_loc;
+    int32_t alt_above_home_cm = 0;
+     ahrs.get_position(current_loc);
+     if(!current_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME, alt_above_home_cm))
+     {
+       float posD;
+       ahrs.get_relative_position_D_home(posD);
+       alt_above_home_cm = -posD*100;
+     }
+    bool tether_likely_failed = copter.planck_interface.is_tether_high_tension()
+        && ((alt_above_home_cm - copter.planck_interface.get_locked_alt_cm()) > 100 || (copter.planck_interface.get_tag_pos().z - copter.planck_interface.get_locked_tag_alt_cm() > 100))
+        && copter.planck_interface.is_tether_high_tension()
+        && (AP_HAL::millis() - copter.planck_interface.get_high_tension_timestamp_ms()) > 15000;
+
+    if((copter.planck_interface.is_tether_timed_out()
+         || (!copter.position_ok() && !copter.planck_interface.get_tag_tracking_state())
+         || copter.planck_interface.is_tether_high_tension()) && !tether_likely_failed){
+
+      guided_vel_target_cms.zero();
+
+      guided_pos_target_cm = inertial_nav.get_position();
+      pos_control->set_pos_target(guided_pos_target_cm);
+      pos_control->update_xy_controller();
+      pos_control->set_desired_velocity_xy(guided_vel_target_cms.x, guided_vel_target_cms.y);
+
+    }
+    else{
+
+      pos_control->set_pos_target(guided_pos_target_cm);
+      pos_control->set_desired_velocity_xy(guided_vel_target_cms.x, guided_vel_target_cms.y);
+      pos_control->update_xy_controller();
+      pos_control->update_z_controller();
+
+    }
 
     // call attitude controller
     if (auto_yaw.mode() == AUTO_YAW_HOLD) {
@@ -634,19 +673,38 @@ void ModeGuided::angle_control_run(bool high_jerk_z)
 
     // call position controller
     //Hack for AVEM to command zero descent rate (and force zero alt error) if tether has timed out
-    if(copter.planck_interface.is_tether_timed_out()
+//    if((copter.planck_interface.is_tether_timed_out()
+//       || (!copter.position_ok() && !copter.planck_interface.get_tag_tracking_state())
+//       || copter.planck_interface.get_tether_high_tension_flag())){
+////      pos_control->set_alt_target_from_climb_rate_ff(climb_rate_cms, G_Dt, false, high_jerk_z);
+
+////      pos_control->set_alt_target(inertial_nav.get_altitude());
+////      pos_control->set_alt_target_from_climb_rate_only(climb_rate_cms,G_Dt,true);
+////      attitude_control->set_throttle_out(g.planck_emergency_throttle,
+////                                         true,
+////                                         g.throttle_filt);
+
+//    }
+
+    Location current_loc;
+    int32_t alt_above_home_cm = 0;
+     ahrs.get_position(current_loc);
+     if(!current_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME, alt_above_home_cm))
+     {
+       float posD;
+       ahrs.get_relative_position_D_home(posD);
+       alt_above_home_cm = -posD*100;
+     }
+    bool tether_likely_failed = copter.planck_interface.is_tether_high_tension()
+        && ((alt_above_home_cm - copter.planck_interface.get_locked_alt_cm()) > 100 || (copter.planck_interface.get_tag_pos().z - copter.planck_interface.get_locked_tag_alt_cm() > 100))
+        && copter.planck_interface.is_tether_high_tension()
+        && (AP_HAL::millis() - copter.planck_interface.get_high_tension_timestamp_ms()) > 15000;
+
+
+    if(!(copter.planck_interface.is_tether_timed_out()
        || (!copter.position_ok() && !copter.planck_interface.get_tag_tracking_state())
-       || copter.planck_interface.get_tether_high_tension_flag()){
-//      pos_control->set_alt_target_from_climb_rate_ff(climb_rate_cms, G_Dt, false, high_jerk_z);
+       || copter.planck_interface.get_tether_high_tension_flag()) || tether_likely_failed){//else{
 
-//      pos_control->set_alt_target(inertial_nav.get_altitude());
-//      pos_control->set_alt_target_from_climb_rate_only(climb_rate_cms,G_Dt,true);
-      attitude_control->set_throttle_out(g.planck_emergency_throttle,
-                                         true,
-                                         g.throttle_filt);
-
-    }
-    else{
       pos_control->set_alt_target_from_climb_rate_ff(climb_rate_cms, G_Dt, false, high_jerk_z);
       pos_control->update_z_controller();
     }
