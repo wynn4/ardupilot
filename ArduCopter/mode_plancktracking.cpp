@@ -29,6 +29,8 @@ bool ModePlanckTracking::init(bool ignore_checks){
           rate_xy_cms/100.);
     }
 
+    gcs().send_text(MAV_SEVERITY_INFO, "EnPT: symode from %d to %d", (unsigned)_stored_yaw_mode,(unsigned)auto_yaw.mode());
+
     _stored_yaw_mode = auto_yaw.mode();
     //Initialize the GUIDED methods
     return init_without_RTB_request(ignore_checks);
@@ -131,6 +133,11 @@ void ModePlanckTracking::run() {
         }
     }
 
+    static uint32_t next_yaw_report_t_ms = 0;
+           if(AP_HAL::millis() > next_yaw_report_t_ms) {
+             gcs().send_text(MAV_SEVERITY_INFO, "yfmode pan ymode:  %i %i %i",  mount->mount_yaw_follow_mode, mount->has_pan_control(), auto_yaw.mode());
+             next_yaw_report_t_ms = AP_HAL::millis() + 500;
+           }
     //If there is new command data, send it to Guided
     if(copter.planck_interface.new_command_available()) {
         switch(copter.planck_interface.get_cmd_type()) {
@@ -350,5 +357,6 @@ bool ModePlanckTracking::allows_arming(bool from_gcs) const
 
 void ModePlanckTracking::exit()
 {
+  gcs().send_text(MAV_SEVERITY_INFO, "EPT: ymode to %d from %d", (unsigned)_stored_yaw_mode,(unsigned)auto_yaw.mode());
   auto_yaw.set_mode(_stored_yaw_mode);
 }

@@ -5,6 +5,7 @@ bool ModePlanckLand::init(bool ignore_checks){
     //If we are already landed this makes no sense
     if(copter.ap.land_complete)
       return false;
+    gcs().send_text(MAV_SEVERITY_INFO, "EnPL: symode from %d to %d", (unsigned)_stored_yaw_mode,(unsigned)auto_yaw.mode());
 
     _stored_yaw_mode = auto_yaw.mode();
 
@@ -31,6 +32,8 @@ bool ModePlanckLand::init(bool ignore_checks){
 void ModePlanckLand::exit()
 {
     copter.pos_control->get_pos_z_p().kP(_kpz_nom);
+    gcs().send_text(MAV_SEVERITY_INFO, "EPL: ymode to %d from %d", (unsigned)_stored_yaw_mode,(unsigned)auto_yaw.mode());
+
     auto_yaw.set_mode(_stored_yaw_mode);
 }
 

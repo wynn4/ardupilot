@@ -6,6 +6,8 @@ bool ModePlanckRTB::init(bool ignore_checks){
     if(copter.ap.land_complete)
       return false;
 
+    gcs().send_text(MAV_SEVERITY_INFO, "Entering Planck RTB: storing yaw mode from %d to %d", (unsigned)_stored_yaw_mode,(unsigned)auto_yaw.mode());
+
     _stored_yaw_mode = auto_yaw.mode();
 
     //If we're ready to land, jump right to it
@@ -38,5 +40,7 @@ void ModePlanckRTB::run(){
 
 void ModePlanckRTB::exit()
 {
+  gcs().send_text(MAV_SEVERITY_INFO, "Exiting RTB: setting yaw mode to %d from %d", (unsigned)_stored_yaw_mode,(unsigned)auto_yaw.mode());
+
   auto_yaw.set_mode(_stored_yaw_mode);
 }

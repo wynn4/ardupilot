@@ -52,5 +52,6 @@ void ModePlanckWingman::run() {
 
 void ModePlanckWingman::exit()
 {
+  gcs().send_text(MAV_SEVERITY_INFO, "Exiting Planck Wingman: setting yaw mode to %d from %d", (unsigned)_stored_yaw_mode,(unsigned)auto_yaw.mode());
   auto_yaw.set_mode(_stored_yaw_mode);
 }
