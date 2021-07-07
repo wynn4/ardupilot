@@ -6,17 +6,17 @@ bool ModePlanckRTB::init(bool ignore_checks){
     if(copter.ap.land_complete)
       return false;
 
+    _stored_yaw_mode = auto_yaw.mode();
+
     //If we're ready to land, jump right to it
     if(copter.mode_planckland.init(ignore_checks)) {
       _is_landing = true;
-      _stored_yaw_mode = auto_yaw.mode();
       return true;
     }
 
     //Otherwise, run tracking
     if(copter.mode_plancktracking.init(ignore_checks)) {
       _is_landing = false;
-      _stored_yaw_mode = auto_yaw.mode();
       return true;
     }
 
@@ -38,5 +38,5 @@ void ModePlanckRTB::run(){
 
 void ModePlanckRTB::exit()
 {
-  auto_yaw.set_mode_to_default(false);
+  auto_yaw.set_mode(_stored_yaw_mode);
 }

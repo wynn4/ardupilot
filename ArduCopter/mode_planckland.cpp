@@ -6,6 +6,8 @@ bool ModePlanckLand::init(bool ignore_checks){
     if(copter.ap.land_complete)
       return false;
 
+    _stored_yaw_mode = auto_yaw.mode();
+
     if(!is_equal(copter.pos_control->get_pos_z_p().kP().get(),_kpz_nom)){
       _kpz_nom = copter.pos_control->get_pos_z_p().kP().get();
     }
@@ -20,7 +22,6 @@ bool ModePlanckLand::init(bool ignore_checks){
             copter.g.land_speed : copter.pos_control->get_max_speed_down()))/100.;
       copter.planck_interface.request_land(land_velocity);
       copter.pos_control->get_pos_z_p().kP(g.planck_land_kp_z);
-      _stored_yaw_mode = auto_yaw.mode();
       return true;
     }
     return false;

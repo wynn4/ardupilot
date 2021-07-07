@@ -10,11 +10,12 @@ bool ModePlanckWingman::init(bool ignore_checks){
       return false;
 
     //Otherwise, run tracking
+    _stored_yaw_mode = auto_yaw.mode();
+
     if(copter.mode_plancktracking.init_without_RTB_request(ignore_checks)) {
 
       //And command a zero-rate, telling planck to maintain current relative position
       copter.planck_interface.request_move_target(Vector3f(0,0,0),true);
-      _stored_yaw_mode = auto_yaw.mode();
       return true;
     }
 
