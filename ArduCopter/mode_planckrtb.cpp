@@ -9,12 +9,14 @@ bool ModePlanckRTB::init(bool ignore_checks){
     //If we're ready to land, jump right to it
     if(copter.mode_planckland.init(ignore_checks)) {
       _is_landing = true;
+      _stored_yaw_mode = auto_yaw.mode();
       return true;
     }
 
     //Otherwise, run tracking
     if(copter.mode_plancktracking.init(ignore_checks)) {
       _is_landing = false;
+      _stored_yaw_mode = auto_yaw.mode();
       return true;
     }
 

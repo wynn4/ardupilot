@@ -14,6 +14,7 @@ bool ModePlanckWingman::init(bool ignore_checks){
 
       //And command a zero-rate, telling planck to maintain current relative position
       copter.planck_interface.request_move_target(Vector3f(0,0,0),true);
+      _stored_yaw_mode = auto_yaw.mode();
       return true;
     }
 
@@ -50,5 +51,5 @@ void ModePlanckWingman::run() {
 
 void ModePlanckWingman::exit()
 {
-  auto_yaw.set_mode_to_default(false);
+  auto_yaw.set_mode(_stored_yaw_mode);
 }

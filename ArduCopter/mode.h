@@ -1525,6 +1525,8 @@ protected:
 
     //if we want to land or transition to planck_land when we get back
     bool _land_when_ready = false;
+    autopilot_yaw_mode _stored_yaw_mode = auto_yaw.default_mode(false);
+
 };
 
 class ModePlanckRTB : public ModeGuided {
@@ -1550,6 +1552,7 @@ protected:
     const char *name4() const override { return "PRTB"; }
 
     bool _is_landing = false;
+    autopilot_yaw_mode _stored_yaw_mode = auto_yaw.default_mode(false);
 };
 
 class ModePlanckLand : public ModeGuidedNoGPS {
@@ -1574,6 +1577,8 @@ protected:
 
     const char *name() const override { return "PLANCKLAND"; }
     const char *name4() const override { return "PLND"; }
+    autopilot_yaw_mode _stored_yaw_mode = auto_yaw.default_mode(false);
+
 };
 
 class ModePlanckWingman : public ModeGuided {
@@ -1601,4 +1606,5 @@ private:
 
     uint32_t _next_req_send_t_ms = 0; //For sending new targets at a fixed rate
     const int8_t _send_rate_ms = 100; //10hz, 100ms
+    autopilot_yaw_mode _stored_yaw_mode = auto_yaw.default_mode(false);
 };

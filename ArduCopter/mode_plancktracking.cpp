@@ -29,6 +29,7 @@ bool ModePlanckTracking::init(bool ignore_checks){
           rate_xy_cms/100.);
     }
 
+    _stored_yaw_mode = auto_yaw.mode();
     //Initialize the GUIDED methods
     return init_without_RTB_request(ignore_checks);
 }
@@ -349,5 +350,5 @@ bool ModePlanckTracking::allows_arming(bool from_gcs) const
 
 void ModePlanckTracking::exit()
 {
-  auto_yaw.set_mode_to_default(false);
+  auto_yaw.set_mode(_stored_yaw_mode);
 }
