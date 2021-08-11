@@ -55,6 +55,9 @@ void ModePlanckTracking::run() {
                   is_yaw_rate = true;
               }
 
+              Matrix3f temp_mat = accel_cmss.from_axis_angle(Vector3f(0,0,1),radians(g.planck_yaw_err_deg));
+               accel_cmss = temp_mat * accel_cmss;
+
               //Turn accel into lean angles
               float roll_cd, pitch_cd;
               copter.pos_control->accel_to_lean_angles(

@@ -421,6 +421,14 @@ const AP_Param::Info Copter::var_info[] = {
     // @User: Advanced
     GSCALAR(rc_speed, "RC_SPEED",              RC_FAST_SPEED),
 
+  // @Param: PLANK_YAW_ERR
+  // @DisplayName: Fake yaw error
+  // @Units: Deg
+  // @Description: Adds yaw error to planck state info yaw
+  // @Range: -180-180
+  // @User: Standard
+  GSCALAR(planck_yaw_err_deg,                 "PLANCK_YAW_ERR",           PLANCK_YAW_ERR),
+
     // @Param: ACRO_RP_P
     // @DisplayName: Acro Roll and Pitch P gain
     // @Description: Converts pilot roll and pitch into a desired rate of rotation in ACRO and SPORT mode.  Higher values mean faster rate of rotation.
