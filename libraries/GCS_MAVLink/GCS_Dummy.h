@@ -88,5 +88,6 @@ private:
     void send_statustext(MAV_SEVERITY severity, uint8_t dest_bitmask, const char *text) override { hal.console->printf("TOGCS: %s\n", text); }
 
     MAV_TYPE frame_type() const override { return MAV_TYPE_FIXED_WING; }
+    float get_fake_yaw_err() const override { return 0; }
     uint32_t custom_mode() const override { return 3; } // magic number
 };

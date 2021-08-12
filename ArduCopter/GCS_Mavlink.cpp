@@ -17,6 +17,11 @@ MAV_TYPE GCS_Copter::frame_type() const
     return copter.get_frame_mav_type();
 }
 
+float GCS_Copter::get_fake_yaw_err() const
+{
+    return copter.g.planck_yaw_err_deg;
+}
+
 MAV_MODE GCS_MAVLINK_Copter::base_mode() const
 {
     uint8_t _base_mode = MAV_MODE_FLAG_STABILIZE_ENABLED;

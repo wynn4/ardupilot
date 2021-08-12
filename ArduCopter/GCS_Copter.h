@@ -29,7 +29,7 @@ public:
 
     uint32_t custom_mode() const override;
     MAV_TYPE frame_type() const override;
-
+    float get_fake_yaw_err() const override;
     const char* frame_string() const override;
 
     bool vehicle_initialised() const override;

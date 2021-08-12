@@ -55,7 +55,10 @@ void ModePlanckTracking::run() {
                   is_yaw_rate = true;
               }
 
-              Matrix3f temp_mat = accel_cmss.from_axis_angle(Vector3f(0,0,1),radians(g.planck_yaw_err_deg));
+              Matrix3f temp_mat;// =  Matrix3<float>::from_axis_angle(Vector3f(0,0,1),radians(g.planck_yaw_err_deg));
+//              temp_mat.from_axis_angle(Vector3f(0,0,1),radians(11));
+              temp_mat.from_axis_angle(Vector3f(0,0,1),radians(-g.planck_yaw_err_deg));
+
                accel_cmss = temp_mat * accel_cmss;
 
               //Turn accel into lean angles

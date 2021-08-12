@@ -2247,7 +2247,9 @@ void GCS_MAVLINK::send_planck_stateinfo()
     last_planck_stateinfo_sent_ms = now;
 
 
-    Matrix3f temp_mat = accel.from_axis_angle(Vector3f(0,0,1),radians(g.planck_yaw_err_deg));
+    Matrix3f temp_mat ;//= Matrix3<float>::from_axis_angle(Vector3f(0,0,1),radians(gcs().get_fake_yaw_err())));
+    temp_mat.from_axis_angle(Vector3f(0,0,1),radians(gcs().get_fake_yaw_err()));
+
      accel = temp_mat * accel;
     mavlink_msg_planck_stateinfo_send(
       chan,
@@ -2259,7 +2261,7 @@ void GCS_MAVLINK::send_planck_stateinfo()
       status,
       ahrs.roll,
       ahrs.pitch,
-      wrap_PI(ahrs.yaw+copter.g.planck_yaw_err_deg),
+      wrap_PI(ahrs.yaw+radians(gcs().get_fake_yaw_err())),
       gyro.x,
       gyro.y,
       gyro.z,

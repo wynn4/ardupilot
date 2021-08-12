@@ -808,6 +808,7 @@ public:
 
     virtual uint32_t custom_mode() const = 0;
     virtual MAV_TYPE frame_type() const = 0;
+    virtual float get_fake_yaw_err() const = 0;
     virtual const char* frame_string() const { return nullptr; }
 
     void send_to_active_channels(uint32_t msgid, const char *pkt);
