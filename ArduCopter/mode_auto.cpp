@@ -76,6 +76,9 @@ bool ModeAuto::init(bool ignore_checks)
 //      relies on run_autopilot being called at 10hz which handles decision making and non-navigation related commands
 void ModeAuto::run()
 {
+    //Check for new detections during Auto_WP for PAYLOAD_RECOVER
+    payload_recover_look_for_detections_during_transit();
+
     // call the correct auto controller
     switch (_mode) {
 
@@ -519,6 +522,7 @@ bool ModeAuto::start_command(const AP_Mission::Mission_Command& cmd)
         break;
 
     case MAV_CMD_NAV_PAYLOAD_PLACE:              // 94 place at Waypoint
+    case MAV_CMD_NAV_PAYLOAD_RECOVER:
         do_payload_place(cmd);
         break;
 
@@ -733,6 +737,7 @@ bool ModeAuto::verify_command(const AP_Mission::Mission_Command& cmd)
         break;
 
     case MAV_CMD_NAV_PAYLOAD_PLACE:
+    case MAV_CMD_NAV_PAYLOAD_RECOVER:
         cmd_complete = verify_payload_place();
         break;
 
@@ -1067,6 +1072,32 @@ void ModeAuto::payload_place_start(const Vector3f& destination)
     auto_yaw.set_mode(AUTO_YAW_HOLD);
 }
 
+// Checks for new tag GPS positions during PAYLOAD_RECOVER transits.
+// Updates the waypoint target when a tag is detected
+void ModeAuto::payload_recover_look_for_detections_during_transit() {
+    //Only applies to PAYLOAD_RECOVER operations during transit
+    if(!(mission.get_current_nav_cmd().id == MAV_CMD_NAV_PAYLOAD_RECOVER && 
+         nav_payload_place.state == PayloadPlaceStateType_FlyToLocation)) {
+        return;
+    }
+
+    //Get the current destination
+    Location wp_dest_loc;
+    if (!wp_nav->get_wp_destination(wp_dest_loc)) { return; }
+
+    //If we detect the target from GPS (not necessarily tag estimator),
+    //update the desired position to be that GPS location
+    Location above_tag_loc;
+    if(!copter.planck_interface.get_tag_loc(above_tag_loc)) { return; }
+
+    above_tag_loc.alt = wp_dest_loc.alt; //Use the current altitude
+    //Compare to the current desired location. If off by more than 1m, adjust the target
+    if (wp_dest_loc.get_distance(above_tag_loc) > 1.0) {
+        wp_nav->set_wp_destination(above_tag_loc);
+        gcs().send_text(MAV_SEVERITY_INFO, "Detected target, adjusting position");
+    }
+}
+
 // auto_payload_place_run - places an object in auto mode
 //      called by auto_run at 100hz or more
 void ModeAuto::payload_place_run()
@@ -1077,6 +1108,12 @@ void ModeAuto::payload_place_run()
         loiter_nav->clear_pilot_desired_acceleration();
         loiter_nav->init_target();
         return;
+    }
+
+    //Update the did_detect_target flag
+    if(!nav_payload_place.did_detect_target && copter.planck_interface.get_tag_tracking_state()) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Started tracking target");
+        nav_payload_place.did_detect_target = true;
     }
 
     // set motors to full range
@@ -1126,7 +1163,7 @@ bool ModeAuto::payload_place_run_should_run()
 void ModeAuto::payload_place_run_loiter()
 {
     // loiter...
-    land_run_horizontal_control();
+    land_run_horizontal_control(mission.get_current_nav_cmd().id == MAV_CMD_NAV_PAYLOAD_RECOVER);
 
     // run loiter controller
     loiter_nav->update();
@@ -1141,8 +1178,9 @@ void ModeAuto::payload_place_run_loiter()
 
 void ModeAuto::payload_place_run_descend()
 {
-    land_run_horizontal_control();
-    land_run_vertical_control();
+    //Run horizontal control. Use Planck if in a recover mode
+    land_run_horizontal_control(mission.get_current_nav_cmd().id == MAV_CMD_NAV_PAYLOAD_RECOVER);
+    land_run_vertical_control(nav_payload_place.pause_descent);
 }
 
 //Planck run methods
@@ -1612,6 +1650,10 @@ void ModeAuto::do_payload_place(const AP_Mission::Mission_Command& cmd)
         payload_place_start();
     }
     nav_payload_place.descend_max = cmd.p1;
+    nav_payload_place.min_alt = nav_payload_place.descend_max; //Same value, but different variable for readability
+    nav_payload_place.min_alt_tag_detection_wait_timestamp = 0; //Initialize at zero
+    nav_payload_place.did_detect_target = false; //Assume we have not yet detected the target
+    nav_payload_place.pause_descent = false;
 }
 
 // do_RTL - start Return-to-Launch
@@ -1712,6 +1754,89 @@ bool ModeAuto::verify_land()
 #define debug(fmt, args ...)
 #endif
 
+void ModeAuto::check_payload_recover_descent(uint32_t time_now) {
+    const float check_rel_posvel_alt = 3.0;        //Check the relative pos/vel before descending below this altitude
+    const float rel_pos_threshold = 0.2;           //Maximum position threshold (m)
+    const float rel_vel_threshold = 10.;           //Maximum position threshold (cm/s)
+    const float alt_of_no_return = 1.0;            //"Just go for it" below this altitude
+    const uint16_t tag_detection_wait_time = 5000; //ms of time to wait before giving up
+
+    //Get current altitude above terrain, if available
+    int32_t alt_above_ground;
+    if (!copter.current_loc.get_alt_cm(Location::AltFrame::ABOVE_TERRAIN, alt_above_ground)) {
+        IGNORE_RETURN(copter.current_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME, alt_above_ground));
+    }
+
+    //Are we currently tracking the target
+    bool target_tracking = copter.planck_interface.get_tag_tracking_state();
+
+    //Get the latest target position. These values may not be valid if the estimator isn't healthy
+    Vector3f pos_ned, vel_ned_cms;
+    copter.planck_interface.get_target_posvel_NED(pos_ned, vel_ned_cms);
+
+    //Handle the case where we are not currently tracking the target. The only case
+    //to consider is when we're below a min_alt threshold
+    if (!target_tracking) {
+        if(alt_above_ground <= MAX(300, (int32_t)nav_payload_place.min_alt)) {
+            //We should pause the descent and wait for a timeout if:
+            // 1. We've reached this minimum altitude and never saw the target.
+            // 2. We previously saw the target and were descending, but have since lost it and are above the point of no return
+            nav_payload_place.pause_descent = false;
+            if (!nav_payload_place.did_detect_target || pos_ned.z > alt_of_no_return) {
+                nav_payload_place.pause_descent = true;
+                if (nav_payload_place.min_alt_tag_detection_wait_timestamp == 0) {
+                    //Start the timer
+                    if(nav_payload_place.did_detect_target) {
+                      gcs().send_text(MAV_SEVERITY_WARNING, "Lost target. Waiting to reacquire");
+                    } else {
+                      gcs().send_text(MAV_SEVERITY_WARNING, "Waiting to acquire target");
+                    }
+                    nav_payload_place.min_alt_tag_detection_wait_timestamp = time_now;
+                } else if (time_now >= (nav_payload_place.min_alt_tag_detection_wait_timestamp + tag_detection_wait_time)) {
+                    //Timer expired
+                    gcs().send_text(MAV_SEVERITY_WARNING, "Did not detect target. Ascending");
+                    nav_payload_place.state = PayloadPlaceStateType_Ascending;
+                }
+            }
+        }
+
+        //Check for GPS positions. If a target GPS position comes in, update the loiter X/Y target
+        Location tag_loc;
+        if(copter.planck_interface.get_commbox_state() && copter.planck_interface.get_tag_loc(tag_loc)) {
+            //If the GPS tag location differs from the current target by more than 0.5m, update the target position
+            if(Location(pos_control->get_pos_target()).get_distance(tag_loc) > 0.5) {
+                Vector3f tag_pos;
+                if(tag_loc.get_vector_from_origin_NEU(tag_pos)) {
+                    gcs().send_text(MAV_SEVERITY_INFO, "Detected target, adjusting position");
+                    loiter_nav->init_target(tag_pos); //z is ignored in init_target
+                }
+            }
+        }
+        return;
+    }
+
+    //Reset the timeout, if necessary
+    if(nav_payload_place.min_alt_tag_detection_wait_timestamp != 0) {
+        nav_payload_place.min_alt_tag_detection_wait_timestamp = 0;
+        gcs().send_text(MAV_SEVERITY_INFO, "Acquired target. Descending");
+    }
+
+    //At this point the tag estimator is healthy
+    nav_payload_place.pause_descent = false; //Descend
+
+    //Update the heading target
+    float heading_cd;
+    copter.planck_interface.get_tag_heading_cd(heading_cd);
+    auto_yaw.set_fixed_yaw(heading_cd * 0.01f, 0.0f, 0, false);
+
+    //If within 3m altitude of the target, ensure that we are within 20cm of the target and barely moving
+    //If less than 1m altitude, just continue to descend
+    if (pos_ned.z <= check_rel_posvel_alt && pos_ned.z > alt_of_no_return) {
+        nav_payload_place.pause_descent = (Vector2f(pos_ned.x, pos_ned.y).length() >= rel_pos_threshold) ||
+                                          (Vector2f(vel_ned_cms.x, vel_ned_cms.y).length() >= rel_vel_threshold);
+    }
+}
+
 // verify_payload_place - returns true if placing has been completed
 bool ModeAuto::verify_payload_place()
 {
@@ -1776,47 +1901,66 @@ bool ModeAuto::verify_payload_place()
         nav_payload_place.descend_start_timestamp = now;
         nav_payload_place.descend_start_altitude = inertial_nav.get_altitude();
         nav_payload_place.descend_throttle_level = 0;
+        nav_payload_place.min_alt_tag_detection_wait_timestamp = 0;
         nav_payload_place.state = PayloadPlaceStateType_Descending;
         FALLTHROUGH;
     case PayloadPlaceStateType_Descending:
         // make sure we don't descend too far:
         debug("descended: %f cm (%f cm max)", (nav_payload_place.descend_start_altitude - inertial_nav.get_altitude()), nav_payload_place.descend_max);
-        if (!is_zero(nav_payload_place.descend_max) &&
-            nav_payload_place.descend_start_altitude - inertial_nav.get_altitude()  > nav_payload_place.descend_max) {
-            nav_payload_place.state = PayloadPlaceStateType_Ascending;
-            gcs().send_text(MAV_SEVERITY_WARNING, "Reached maximum descent");
-            return false; // we'll do any cleanups required next time through the loop
-        }
-        // see if we've been descending long enough to calibrate a descend-throttle-level:
-        if (is_zero(nav_payload_place.descend_throttle_level) &&
-            now - nav_payload_place.descend_start_timestamp > descend_throttle_calibrate_time) {
-            nav_payload_place.descend_throttle_level = current_throttle_level;
-        }
-        // watch the throttle to determine whether the load has been placed
-        // debug("hover ratio: %f   descend ratio: %f\n", current_throttle_level/nav_payload_place.hover_throttle_level, ((nav_payload_place.descend_throttle_level == 0) ? -1.0f : current_throttle_level/nav_payload_place.descend_throttle_level));
-        if (current_throttle_level/nav_payload_place.hover_throttle_level > hover_throttle_placed_fraction &&
-            (is_zero(nav_payload_place.descend_throttle_level) ||
-             current_throttle_level/nav_payload_place.descend_throttle_level > descent_throttle_placed_fraction)) {
-            // throttle is above both threshold ratios (or above hover threshold ration and descent threshold ratio not yet valid)
-            nav_payload_place.place_start_timestamp = 0;
-            return false;
-        }
-        if (nav_payload_place.place_start_timestamp == 0) {
-            // we've only just now hit the correct throttle level
-            nav_payload_place.place_start_timestamp = now;
-            return false;
-        } else if (now - nav_payload_place.place_start_timestamp < placed_time) {
-            // keep going down....
-            debug("Place Timer: %d", now - nav_payload_place.place_start_timestamp);
-            return false;
+        // Make sure we see the target before descending during PAYLOAD_RECOVER
+        if(mission.get_current_nav_cmd().id == MAV_CMD_NAV_PAYLOAD_RECOVER) {
+            //Change descent based on target detection
+            check_payload_recover_descent(now);
+
+            //Stay in Descending until we detect a landing.
+            if(!copter.ap.land_complete_maybe) {
+                return false;
+            }
+            //Fallthrough
+        } else {
+            if (!is_zero(nav_payload_place.descend_max) &&
+                nav_payload_place.descend_start_altitude - inertial_nav.get_altitude()  > nav_payload_place.descend_max) {
+                nav_payload_place.state = PayloadPlaceStateType_Ascending;
+                gcs().send_text(MAV_SEVERITY_WARNING, "Reached maximum descent");
+                return false; // we'll do any cleanups required next time through the loop
+            }
+
+            // see if we've been descending long enough to calibrate a descend-throttle-level:
+            if (is_zero(nav_payload_place.descend_throttle_level) &&
+                now - nav_payload_place.descend_start_timestamp > descend_throttle_calibrate_time) {
+                nav_payload_place.descend_throttle_level = current_throttle_level;
+            }
+            // watch the throttle to determine whether the load has been placed
+            // debug("hover ratio: %f   descend ratio: %f\n", current_throttle_level/nav_payload_place.hover_throttle_level, ((nav_payload_place.descend_throttle_level == 0) ? -1.0f : current_throttle_level/nav_payload_place.descend_throttle_level));
+            if (current_throttle_level/nav_payload_place.hover_throttle_level > hover_throttle_placed_fraction &&
+                (is_zero(nav_payload_place.descend_throttle_level) ||
+                 current_throttle_level/nav_payload_place.descend_throttle_level > descent_throttle_placed_fraction)) {
+                // throttle is above both threshold ratios (or above hover threshold ration and descent threshold ratio not yet valid)
+                nav_payload_place.place_start_timestamp = 0;
+                return false;
+            }
+            if (nav_payload_place.place_start_timestamp == 0) {
+                // we've only just now hit the correct throttle level
+                nav_payload_place.place_start_timestamp = now;
+                return false;
+            } else if (now - nav_payload_place.place_start_timestamp < placed_time) {
+                // keep going down....
+                debug("Place Timer: %d", now - nav_payload_place.place_start_timestamp);
+                return false;
+            }
         }
         nav_payload_place.state = PayloadPlaceStateType_Releasing_Start;
         FALLTHROUGH;
     case PayloadPlaceStateType_Releasing_Start:
 #if GRIPPER_ENABLED == ENABLED
         if (g2.gripper.valid()) {
-            gcs().send_text(MAV_SEVERITY_INFO, "Releasing the gripper");
-            g2.gripper.release();
+            if(mission.get_current_nav_cmd().id == MAV_CMD_NAV_PAYLOAD_RECOVER) {
+              gcs().send_text(MAV_SEVERITY_INFO, "Closing the gripper");
+              g2.gripper.grab();
+            } else {
+              gcs().send_text(MAV_SEVERITY_INFO, "Releasing the gripper");
+              g2.gripper.release();
+            }
         } else {
             gcs().send_text(MAV_SEVERITY_INFO, "Gripper not valid");
             nav_payload_place.state = PayloadPlaceStateType_Ascending_Start;
@@ -1829,8 +1973,16 @@ bool ModeAuto::verify_payload_place()
         FALLTHROUGH;
     case PayloadPlaceStateType_Releasing:
 #if GRIPPER_ENABLED == ENABLED
-        if (g2.gripper.valid() && !g2.gripper.released()) {
-            return false;
+        if(mission.get_current_nav_cmd().id == MAV_CMD_NAV_PAYLOAD_RECOVER) {
+            if (g2.gripper.valid() && !g2.gripper.grabbed()) {
+                return false;
+            } else {
+                gcs().send_text(MAV_SEVERITY_INFO, "Completed grab");
+            }
+        } else {
+            if (g2.gripper.valid() && !g2.gripper.released()) {
+                return false;
+            }
         }
 #endif
         nav_payload_place.state = PayloadPlaceStateType_Released;
@@ -1842,7 +1994,8 @@ bool ModeAuto::verify_payload_place()
     case PayloadPlaceStateType_Ascending_Start: {
         Location target_loc = inertial_nav.get_position();
         target_loc.alt = nav_payload_place.descend_start_altitude;
-        wp_start(target_loc);
+        gcs().send_text(MAV_SEVERITY_INFO, "Ascending to %i", target_loc.alt);
+        takeoff_start(target_loc);
         nav_payload_place.state = PayloadPlaceStateType_Ascending;
         }
         FALLTHROUGH;
@@ -1850,6 +2003,7 @@ bool ModeAuto::verify_payload_place()
         if (!copter.wp_nav->reached_wp_destination()) {
             return false;
         }
+        gcs().send_text(MAV_SEVERITY_INFO, "Payload place done");
         nav_payload_place.state = PayloadPlaceStateType_Done;
         FALLTHROUGH;
     case PayloadPlaceStateType_Done:

@@ -582,7 +582,7 @@ void Mode::land_run_vertical_control(bool pause_descent)
     pos_control->update_z_controller();
 }
 
-void Mode::land_run_horizontal_control()
+void Mode::land_run_horizontal_control(bool land_on_planck_target)
 {
     float target_roll = 0.0f;
     float target_pitch = 0.0f;
@@ -623,6 +623,24 @@ void Mode::land_run_horizontal_control()
         target_yaw_rate = get_pilot_desired_yaw_rate(channel_yaw->get_control_in());
         if (!is_zero(target_yaw_rate)) {
             auto_yaw.set_mode(AUTO_YAW_HOLD);
+        }
+    }
+
+    //Attempt to land on the planck target, if target data is available
+    if(land_on_planck_target) {
+        Vector3f target_pos_NED, target_vel_NED_cms;
+        static Vector3f last_target_pos_NED, last_target_vel_NED_cms;
+        if(copter.planck_interface.get_target_posvel_NED(target_pos_NED,target_vel_NED_cms)) {
+            if(last_target_pos_NED != target_pos_NED && last_target_vel_NED_cms != target_vel_NED_cms) {
+                //Shift the aircraft-relative target position into a home-relative position
+                Vector3f target_pos_neu_cm = Vector3f(target_pos_NED.x, target_pos_NED.y, -target_pos_NED.z) * 100.;
+                Vector3f target_pos_rel_home_cm = inertial_nav.get_position() + target_pos_neu_cm;
+        
+                pos_control->set_xy_target(target_pos_rel_home_cm.x, target_pos_rel_home_cm.y);
+                pos_control->override_vehicle_velocity_xy(-Vector2f(target_vel_NED_cms.x, target_vel_NED_cms.y));
+            }
+            last_target_pos_NED = target_pos_NED;
+            last_target_vel_NED_cms = target_vel_NED_cms;
         }
     }
 

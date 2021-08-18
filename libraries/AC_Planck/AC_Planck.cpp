@@ -118,6 +118,29 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
         break;
     }
 
+    case MAVLINK_MSG_ID_PLANCK_LANDING_TAG_ESTIMATE_GPS:
+    {
+      mavlink_planck_landing_tag_estimate_gps_t t_est;
+      mavlink_msg_planck_landing_tag_estimate_gps_decode(mav_msg, &t_est);
+      _tag_est_gps.timestamp_ms = AP_HAL::millis();
+      _tag_est_gps.tag_loc = Location( t_est.lat, t_est.lon,  t_est.alt*100, Location::AltFrame::ABSOLUTE);
+      _tag_est_gps.tag_vel = Vector3f( t_est.vx, t_est.vy, t_est.vz);
+      break;
+    }
+
+    case MAVLINK_MSG_ID_PLANCK_LANDING_TAG_ESTIMATE_NED:
+    {
+      mavlink_planck_landing_tag_estimate_ned_t t_est;
+      mavlink_msg_planck_landing_tag_estimate_ned_decode(mav_msg, &t_est);
+      _tag_est_ned.tag_pos_ned = Vector3f(t_est.x, t_est.y, t_est.z);
+      _tag_est_ned.tag_vel_ned_cms = Vector3f(t_est.vx, t_est.vy, t_est.vz)*100;
+      _tag_est_ned.tag_att_rpy_cd = Vector3f(t_est.roll, t_est.pitch, t_est.yaw)*RAD_TO_DEG*100;
+      _tag_est_ned.meas_age_ms = t_est.age;
+      _tag_est_ned.timestamp_ap_ms = t_est.ap_timestamp_us/1E3;
+      _tag_est_ned.timestamp_receive_ms = AP_HAL::millis();
+      break;
+    }
+
     default:
       break;
   }
@@ -282,4 +305,26 @@ uint32_t AC_Planck::mux_rates(float rate_up,  float rate_down)
   uint32_t muxed_rates = ((uint32_t(rate_up) << 16) | uint32_t(rate_down));
   muxed_rates = (muxed_rates & 0x7FFF7FFF) | 0x00008000;
   return muxed_rates;
-};
+}
+
+bool AC_Planck::get_target_posvel_NED(Vector3f& pos_ned, Vector3f& vel_ned_cms) {
+  pos_ned = _tag_est_ned.tag_pos_ned;
+  vel_ned_cms = _tag_est_ned.tag_vel_ned_cms;
+  return _tag_est_ned.valid();
+}
+
+bool AC_Planck::get_tag_loc(Location &loc) {
+  loc = _tag_est_gps.tag_loc;
+  return (AP_HAL::millis()-_tag_est_gps.timestamp_ms)<1000;
+}
+
+bool AC_Planck::get_tag_heading_cd(float& heading_cd) {
+  heading_cd = _tag_est_ned.tag_att_rpy_cd.z;
+  return _tag_est_ned.valid();
+}
+
+bool AC_Planck::get_alt_above_target(float& alt_above_target_m) {
+  alt_above_target_m = _tag_est_ned.tag_pos_ned.z;
+  return _tag_est_ned.valid();
+}
+

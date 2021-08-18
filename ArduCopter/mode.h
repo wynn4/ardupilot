@@ -109,7 +109,7 @@ protected:
 
     // functions to control landing
     // in modes that support landing
-    void land_run_horizontal_control();
+    void land_run_horizontal_control(bool land_on_planck_target = false);
     void land_run_vertical_control(bool pause_descent = false);
 
     // return expected input throttle setting to hover:
@@ -421,6 +421,8 @@ private:
     void payload_place_run_loiter();
     void payload_place_run_descend();
     void payload_place_run_release();
+    void payload_recover_look_for_detections_during_transit();
+    void check_payload_recover_descent(uint32_t time_now);
 
     AutoMode _mode = Auto_TakeOff;   // controls which auto controller is run
 
@@ -512,6 +514,10 @@ private:
         float descend_throttle_level;
         float descend_start_altitude;
         float descend_max; // centimetres
+        float min_alt; //centimeters
+        uint32_t min_alt_tag_detection_wait_timestamp; //milliseconds
+        bool did_detect_target; //if the target was being tracked at anytime
+        bool pause_descent; //If we should pause the descent
     } nav_payload_place;
 
     bool _planck_used; //If planck is being used currently

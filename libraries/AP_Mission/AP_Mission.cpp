@@ -619,6 +619,7 @@ bool AP_Mission::stored_in_location(uint16_t id)
     case MAV_CMD_NAV_VTOL_TAKEOFF:
     case MAV_CMD_NAV_VTOL_LAND:
     case MAV_CMD_NAV_PAYLOAD_PLACE:
+    case MAV_CMD_NAV_PAYLOAD_RECOVER:
         return true;
     default:
         return false;
@@ -986,6 +987,7 @@ MAV_MISSION_RESULT AP_Mission::mavlink_int_to_mission_cmd(const mavlink_mission_
         break;        
 
     case MAV_CMD_NAV_PAYLOAD_PLACE:
+    case MAV_CMD_NAV_PAYLOAD_RECOVER:
         cmd.p1 = packet.param1*100; // copy max-descend parameter (m->cm)
         break;
 
@@ -1431,6 +1433,7 @@ bool AP_Mission::mission_cmd_to_mavlink_int(const AP_Mission::Mission_Command& c
         break;        
 
     case MAV_CMD_NAV_PAYLOAD_PLACE:
+    case MAV_CMD_NAV_PAYLOAD_RECOVER:
         packet.param1 = cmd.p1/100.0f; // copy max-descend parameter (m->cm)
         break;
 
@@ -1998,6 +2001,8 @@ const char *AP_Mission::Mission_Command::type() const {
         return "Gripper";
     case MAV_CMD_NAV_PAYLOAD_PLACE:
         return "PayloadPlace";
+    case MAV_CMD_NAV_PAYLOAD_RECOVER:
+        return "PayloadRecover";
     case MAV_CMD_DO_PARACHUTE:
         return "Parachute";
     case MAV_CMD_NAV_PLANCK_TAKEOFF:

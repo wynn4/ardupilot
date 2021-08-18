@@ -41,8 +41,9 @@ public:
   bool ready_for_takeoff(void) { return _is_status_ok() && _status.takeoff_ready; };
   bool ready_for_land(void) { return _is_status_ok() && _status.land_ready; };
   bool is_takeoff_complete() { return _status.takeoff_complete; };
-  bool get_commbox_state() { return _status.commbox_ok && _status.commbox_gps_ok && _status.tracking_commbox_gps; };
-  bool get_tag_tracking_state() { return _status.tracking_tag; };
+  bool is_status_timed_out() { return ((AP_HAL::millis() - _status.timestamp_ms) > 500); };
+  bool get_commbox_state() { return _status.commbox_ok && _status.commbox_gps_ok && _status.tracking_commbox_gps && !is_status_timed_out(); };
+  bool get_tag_tracking_state() { return _status.tracking_tag && !is_status_timed_out(); };
 
   //oneshot _was_at_location
   bool at_location() { bool tmp(_was_at_location); _was_at_location = false; return tmp; };
@@ -67,6 +68,18 @@ public:
   bool get_posvel_cmd(Location &loc, Vector3f &vel_cms, float &yaw_cd, bool &is_yaw_rate);
 
   uint32_t mux_rates(float rate_up,  float rate_down);
+
+  //Get the aircraft-relative target position in NED
+  bool get_target_posvel_NED(Vector3f& pos_ned, Vector3f& vel_ned_cms);
+
+  //Returns the latest tag heading. return true if valid
+  bool get_tag_heading_cd(float& heading_cd);
+
+  //Get the latest altitude above target. returning true if valid
+  bool get_alt_above_target(float& alt_above_target_m);
+
+  //Get the current GPS position of the target
+  bool get_tag_loc(Location &loc);
 
 private:
 
@@ -94,6 +107,36 @@ private:
     bool at_location = false;
     uint32_t timestamp_ms = 0;
   }_status;
+
+  struct
+  {
+    Location tag_loc;
+    Vector3f tag_vel = Vector3f(0,0,0);
+    uint32_t timestamp_ms = 0;
+  }_tag_est_gps;
+
+  struct
+  {
+    Vector3f tag_pos_ned = Vector3f(0,0,0);
+    Vector3f tag_vel_ned_cms = Vector3f(0,0,0);
+    Vector3f tag_att_rpy_cd = Vector3f(0,0,0);
+    uint32_t meas_age_ms = 0;
+    uint32_t timestamp_ap_ms = 0;
+    uint32_t timestamp_receive_ms = 0;
+    bool valid() {
+      uint32_t now = AP_HAL::millis();
+      uint32_t rx_age = now - timestamp_receive_ms;
+      bool recent_rx = (rx_age < 100);
+#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
+      return recent_rx;
+#else
+      int32_t est_age = now - timestamp_ap_ms; //Could be negative
+      bool recent_est = (abs(est_age) < 20);
+      bool meas_age_good = (meas_age_ms != 0 && meas_age_ms < 1000);
+      return (meas_age_good && recent_rx && recent_est);
+#endif
+    }
+  }_tag_est_ned;
 
   mavlink_channel_t _chan = MAVLINK_COMM_1;
 
