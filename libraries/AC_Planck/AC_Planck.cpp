@@ -13,7 +13,7 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
         mavlink_planck_status_t ps;
         mavlink_msg_planck_status_decode(mav_msg, &ps);
         _status.timestamp_ms = AP_HAL::millis();
-        _status.takeoff_ready = (bool)ps.takeoff_ready;
+        _status.takeoff_ready = (bool)ps.takeoff_ready && !_waiting_for_planck_takeoff_ack;
         _status.land_ready = (bool)ps.land_ready;
         _status.commbox_ok = (bool)(ps.failsafe & 0x01);
         _status.commbox_gps_ok = (bool)(ps.failsafe & 0x02);
@@ -133,6 +133,8 @@ void AC_Planck::request_takeoff(const float alt)
     PLANCK_CMD_REQ_TAKEOFF,//uint8_t type
     alt,                   //float param1
     0,0,0,0,0);
+
+  _waiting_for_planck_takeoff_ack = true;
 }
 
 void AC_Planck::request_alt_change(const float alt, const float rate_up_cms, const float rate_down_cms)
@@ -268,6 +270,33 @@ bool AC_Planck::get_posvel_cmd(Location &loc, Vector3f &vel_cms, float &yaw_cd, 
   return true;
 }
 
+void AC_Planck::handle_planck_ack(const mavlink_message_t &msg)
+{
+
+      switch (mavlink_msg_command_ack_get_command(&msg)) {
+
+      case PLANCK_CMD_REQ_TAKEOFF:
+        if(!mavlink_msg_command_ack_get_result(&msg)){
+          //disarm
+          _status.takeoff_ready = false;
+        }
+        _waiting_for_planck_takeoff_ack = false;
+        break;
+      case PLANCK_CMD_REQ_RTB:
+      case PLANCK_CMD_REQ_LAND:
+      case PLANCK_CMD_REQ_MOVE_TARGET:
+      case PLANCK_CMD_REQ_STOP:
+
+        copter.planck_interface.handle_planck_ack(msg);
+
+        break;
+
+      default:
+        break;
+
+      }
+
+}
 uint32_t AC_Planck::mux_rates(float rate_up,  float rate_down)
 {
   if (rate_down<0)

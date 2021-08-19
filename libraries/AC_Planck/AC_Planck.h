@@ -66,6 +66,9 @@ public:
   //Get a position, velocity, yaw command
   bool get_posvel_cmd(Location &loc, Vector3f &vel_cms, float &yaw_cd, bool &is_yaw_rate);
 
+  // handle ack/nack message from ACE
+  void handle_planck_ack(const mavlink_message_t &msg);
+
   uint32_t mux_rates(float rate_up,  float rate_down);
 
 private:
@@ -100,4 +103,11 @@ private:
   bool _was_at_location = false; //For debouncing at-location
 
   bool _is_status_ok(void) { return ((AP_HAL::millis() - _status.timestamp_ms) < 500); }
+
+  bool _waiting_for_planck_takeoff_ack = false;
+  bool _waiting_for_planck_rtb_ack = false;
+  bool _waiting_for_planck_land_ack = false;
+  bool _waiting_for_planck_move_target_ack = false;
+  bool _waiting_for_planck_stop_ack = false;
+
 };
