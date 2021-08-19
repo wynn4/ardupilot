@@ -281,11 +281,12 @@ bool AC_Planck::get_posvel_cmd(Location &loc, Vector3f &vel_cms, float &yaw_cd, 
 
 void AC_Planck::handle_planck_ack(const mavlink_message_t &msg)
 {
-
       switch (mavlink_msg_command_ack_get_command(&msg)) {
 
       case PLANCK_CMD_REQ_TAKEOFF:
         _waiting_for_planck_takeoff_ack = false;
+
+        // If PLANCK_CMD_REQ_TAKEOFF is rejected, set _status.takeoff_ready to false
         if(!mavlink_msg_command_ack_get_result(&msg)){
 
           _status.takeoff_ready = false;
@@ -301,6 +302,8 @@ void AC_Planck::handle_planck_ack(const mavlink_message_t &msg)
         _waiting_for_planck_rtb_ack = false;
       case PLANCK_CMD_REQ_LAND:
         _waiting_for_planck_land_ack = false;
+
+        // If PLANCK_CMD_REQ_LAND is rejected, set _status.land_ready to false
         if(!mavlink_msg_command_ack_get_result(&msg)){
 
           _status.land_ready = false;
@@ -323,7 +326,6 @@ void AC_Planck::handle_planck_ack(const mavlink_message_t &msg)
         break;
 
       }
-
 }
 
 uint32_t AC_Planck::mux_rates(float rate_up,  float rate_down)
