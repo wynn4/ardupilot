@@ -14,7 +14,7 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
         mavlink_msg_planck_status_decode(mav_msg, &ps);
         _status.timestamp_ms = AP_HAL::millis();
         _status.takeoff_ready = (bool)ps.takeoff_ready && !_waiting_for_planck_takeoff_ack;
-        _status.land_ready = (bool)ps.land_ready && !_waiting_for_planck_takeoff_ack && _last_land_req_accepted;
+        _status.land_ready = (bool)ps.land_ready && !_waiting_for_planck_land_ack && _last_land_req_accepted;
         _status.commbox_ok = (bool)(ps.failsafe & 0x01);
         _status.commbox_gps_ok = (bool)(ps.failsafe & 0x02);
         _status.tracking_tag = (bool)(ps.status & 0x01);
