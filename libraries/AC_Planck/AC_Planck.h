@@ -109,5 +109,6 @@ private:
   bool _waiting_for_planck_land_ack = false;
   bool _waiting_for_planck_move_target_ack = false;
   bool _waiting_for_planck_stop_ack = false;
+  bool _last_land_req_accepted = false;
 
 };
