@@ -1654,6 +1654,14 @@ void ModeAuto::do_payload_place(const AP_Mission::Mission_Command& cmd)
     nav_payload_place.min_alt_tag_detection_wait_timestamp = 0; //Initialize at zero
     nav_payload_place.did_detect_target = false; //Assume we have not yet detected the target
     nav_payload_place.pause_descent = false;
+
+    //If this is a PAYLOAD_RECOVER, make sure the claw is opened
+    if(cmd.id == MAV_CMD_NAV_PAYLOAD_RECOVER && g2.gripper.valid()) {
+        if(!g2.gripper.released()) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Releasing the gripper");
+            g2.gripper.release();
+        }
+    }
 }
 
 // do_RTL - start Return-to-Launch
