@@ -135,7 +135,7 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
       _tag_est_ned.tag_pos_ned = Vector3f(t_est.x, t_est.y, t_est.z);
       _tag_est_ned.tag_vel_ned_cms = Vector3f(t_est.vx, t_est.vy, t_est.vz)*100;
       _tag_est_ned.tag_att_rpy_cd = Vector3f(t_est.roll, t_est.pitch, t_est.yaw)*RAD_TO_DEG*100;
-      _tag_est_ned.meas_age_ms = t_est.age;
+      _tag_est_ned.meas_age_ms = t_est.age/1E3;
       _tag_est_ned.timestamp_ap_ms = t_est.ap_timestamp_us/1E3;
       _tag_est_ned.timestamp_receive_ms = AP_HAL::millis();
       break;

@@ -127,14 +127,10 @@ private:
       uint32_t now = AP_HAL::millis();
       uint32_t rx_age = now - timestamp_receive_ms;
       bool recent_rx = (rx_age < 100);
-#if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-      return recent_rx;
-#else
-      int32_t est_age = now - timestamp_ap_ms; //Could be negative
+      int32_t est_age = (now > timestamp_ap_ms) ? (now - timestamp_ap_ms) : -(timestamp_ap_ms - now); //Could be negative
       bool recent_est = (abs(est_age) < 20);
       bool meas_age_good = (meas_age_ms != 0 && meas_age_ms < 1000);
       return (meas_age_good && recent_rx && recent_est);
-#endif
     }
   }_tag_est_ned;
 
