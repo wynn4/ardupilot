@@ -1835,7 +1835,7 @@ void ModeAuto::check_payload_recover_descent(uint32_t time_now) {
     //Update the heading target
     float heading_cd;
     copter.planck_interface.get_tag_heading_cd(heading_cd);
-    auto_yaw.set_fixed_yaw(heading_cd * 0.01f, 36., 0, false); //180deg/5s
+    auto_yaw.set_fixed_yaw(heading_cd * 0.01f, 18., 0, false); //180deg/10s
 
     //If within 3m altitude of the target, ensure that we are within 20cm of the target and barely moving
     //If less than 1m altitude, just continue to descend
