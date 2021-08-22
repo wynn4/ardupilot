@@ -1815,11 +1815,12 @@ void ModeAuto::check_payload_recover_descent(uint32_t time_now) {
         if(copter.planck_interface.get_commbox_state() && copter.planck_interface.get_tag_loc(tag_loc)) {
             //If the GPS tag location differs from the current target by more than 0.5m, update the target position
             if(Location(pos_control->get_pos_target()).get_distance(tag_loc) > 0.5) {
-                Vector3f tag_pos;
-                if(tag_loc.get_vector_from_origin_NEU(tag_pos)) {
-                    gcs().send_text(MAV_SEVERITY_INFO, "Detected target, adjusting position");
-                    loiter_nav->init_target(tag_pos); //z is ignored in init_target
-                }
+                gcs().send_text(MAV_SEVERITY_INFO, "Detected target, adjusting position");
+                int32_t current_alt_cm;
+                IGNORE_RETURN(copter.current_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME, current_alt_cm));
+                tag_loc.set_alt_cm(current_alt_cm,Location::AltFrame::ABOVE_HOME);
+                wp_nav->set_wp_destination(tag_loc);
+                nav_payload_place.state = PayloadPlaceStateType_FlyToLocation;
             }
         }
         return;
