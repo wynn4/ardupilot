@@ -518,6 +518,7 @@ private:
         uint32_t min_alt_tag_detection_wait_timestamp; //milliseconds
         bool did_detect_target; //if the target was being tracked at anytime
         bool pause_descent; //If we should pause the descent
+        int recovery_attempts; //Number of times we've tried to get the parcel
     } nav_payload_place;
 
     bool _planck_used; //If planck is being used currently

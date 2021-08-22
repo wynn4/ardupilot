@@ -1665,6 +1665,7 @@ void ModeAuto::do_payload_place(const AP_Mission::Mission_Command& cmd)
     nav_payload_place.min_alt_tag_detection_wait_timestamp = 0; //Initialize at zero
     nav_payload_place.did_detect_target = false; //Assume we have not yet detected the target
     nav_payload_place.pause_descent = false;
+    nav_payload_place.recovery_attempts = 0;
 
     //If this is a PAYLOAD_RECOVER, make sure the claw is opened
     if(cmd.id == MAV_CMD_NAV_PAYLOAD_RECOVER && g2.gripper.valid()) {
@@ -1920,7 +1921,9 @@ bool ModeAuto::verify_payload_place()
         FALLTHROUGH;
     case PayloadPlaceStateType_Descending_Start:
         nav_payload_place.descend_start_timestamp = now;
-        nav_payload_place.descend_start_altitude = inertial_nav.get_altitude();
+        if(nav_payload_place.recovery_attempts == 0) { //Store this through retries
+            nav_payload_place.descend_start_altitude = inertial_nav.get_altitude();
+        }
         nav_payload_place.descend_throttle_level = 0;
         nav_payload_place.min_alt_tag_detection_wait_timestamp = 0;
         nav_payload_place.state = PayloadPlaceStateType_Descending;
@@ -1999,6 +2002,7 @@ bool ModeAuto::verify_payload_place()
                 return false;
             } else {
                 gcs().send_text(MAV_SEVERITY_INFO, "Completed grab");
+                ++nav_payload_place.recovery_attempts;
             }
         } else {
             if (g2.gripper.valid() && !g2.gripper.released()) {
@@ -2020,12 +2024,47 @@ bool ModeAuto::verify_payload_place()
         nav_payload_place.state = PayloadPlaceStateType_Ascending;
         }
         FALLTHROUGH;
-    case PayloadPlaceStateType_Ascending:
+    case PayloadPlaceStateType_Ascending: {
+
+        if(mission.get_current_nav_cmd().id == MAV_CMD_NAV_PAYLOAD_RECOVER) {
+            //On the way up, check the latest target detection altitude
+            //If more than 2m, we must have dropped the parcel
+            float alt_above_target;
+            if(copter.planck_interface.get_alt_above_target(alt_above_target)) {
+                if(alt_above_target > 2.0) {
+                    if(nav_payload_place.recovery_attempts <= 3) {
+                        if(nav_payload_place.recovery_attempts == 0) { //timed-out looking for tag
+                            gcs().send_text(MAV_SEVERITY_WARNING, "Detected target during ascent. Retrying.");
+                        } else {
+                            gcs().send_text(MAV_SEVERITY_WARNING, "Failed to capture parcel. Retrying.");
+                        }
+                        Location tag_loc;
+                        IGNORE_RETURN(copter.planck_interface.get_tag_loc(tag_loc));
+                        int32_t tag_alt_cm;
+                        IGNORE_RETURN(tag_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME, tag_alt_cm));
+                        int32_t target_alt_cm = tag_alt_cm + 300; //3m above the target
+                        tag_loc.set_alt_cm(target_alt_cm,Location::AltFrame::ABOVE_HOME);
+                        wp_nav->set_wp_destination(tag_loc);
+                        auto_yaw.set_mode(AUTO_YAW_FIXED);
+                        if (g2.gripper.valid()) {
+                            g2.gripper.release();
+                        }
+                        nav_payload_place.state = PayloadPlaceStateType_FlyToLocation;
+                        return false;
+                    } else if (nav_payload_place.recovery_attempts == 4) { //Handy way to print once
+                        gcs().send_text(MAV_SEVERITY_WARNING, "Parcel recovery attempts exceeded. Ascending");
+                        nav_payload_place.recovery_attempts++;
+                    }
+                }
+            }
+        }
+
         if (!copter.wp_nav->reached_wp_destination()) {
             return false;
         }
         gcs().send_text(MAV_SEVERITY_INFO, "Payload place done");
         nav_payload_place.state = PayloadPlaceStateType_Done;
+        }
         FALLTHROUGH;
     case PayloadPlaceStateType_Done:
         return true;
