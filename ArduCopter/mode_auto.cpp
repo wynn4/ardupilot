@@ -1094,7 +1094,16 @@ void ModeAuto::payload_recover_look_for_detections_during_transit() {
     //Compare to the current desired location. If off by more than 1m, adjust the target
     if (wp_dest_loc.get_distance(above_tag_loc) > 1.0) {
         wp_nav->set_wp_destination(above_tag_loc);
+        auto_yaw.set_mode(AUTO_YAW_FIXED);
         gcs().send_text(MAV_SEVERITY_INFO, "Detected target, adjusting position");
+    }
+
+    //If we happen to have an estimate, update the yaw heading
+    if(copter.planck_interface.get_tag_tracking_state()) {
+        float tag_heading_cd;
+        if(copter.planck_interface.get_tag_heading_cd(tag_heading_cd)) {
+            auto_yaw.set_fixed_yaw(tag_heading_cd/100., 0, 0, false);
+        }
     }
 }
 
@@ -1820,6 +1829,7 @@ void ModeAuto::check_payload_recover_descent(uint32_t time_now) {
                 IGNORE_RETURN(copter.current_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME, current_alt_cm));
                 tag_loc.set_alt_cm(current_alt_cm,Location::AltFrame::ABOVE_HOME);
                 wp_nav->set_wp_destination(tag_loc);
+                auto_yaw.set_mode(AUTO_YAW_FIXED);
                 nav_payload_place.state = PayloadPlaceStateType_FlyToLocation;
             }
         }
