@@ -1866,6 +1866,8 @@ bool ModeAuto::verify_payload_place()
     const float hover_throttle_placed_fraction = 0.7; // i.e. if throttle is less than 70% of hover we have placed
     const float descent_throttle_placed_fraction = 0.9; // i.e. if throttle is less than 90% of descent throttle we have placed
     const uint16_t placed_time = 500; // how long we have to be below a throttle threshold before considering placed
+    const uint32_t payload_recover_retry_altitude = 300; //3m
+    const int max_payload_recover_attempts = 3;
 
     const float current_throttle_level = motors->get_throttle();
     const uint32_t now =  AP_HAL::millis();
@@ -2032,7 +2034,7 @@ bool ModeAuto::verify_payload_place()
             float alt_above_target;
             if(copter.planck_interface.get_alt_above_target(alt_above_target)) {
                 if(alt_above_target > 2.0) {
-                    if(nav_payload_place.recovery_attempts <= 3) {
+                    if(nav_payload_place.recovery_attempts <= max_payload_recover_attempts) {
                         if(nav_payload_place.recovery_attempts == 0) { //timed-out looking for tag
                             gcs().send_text(MAV_SEVERITY_WARNING, "Detected target during ascent. Retrying.");
                         } else {
@@ -2042,14 +2044,14 @@ bool ModeAuto::verify_payload_place()
                         IGNORE_RETURN(copter.planck_interface.get_tag_loc(tag_loc));
                         int32_t tag_alt_cm;
                         IGNORE_RETURN(tag_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME, tag_alt_cm));
-                        int32_t target_alt_cm = tag_alt_cm + 300; //3m above the target
+                        int32_t target_alt_cm = tag_alt_cm + payload_recover_retry_altitude;
                         tag_loc.set_alt_cm(target_alt_cm,Location::AltFrame::ABOVE_HOME);
                         wp_nav->set_wp_destination(tag_loc);
                         auto_yaw.set_mode(AUTO_YAW_FIXED);
                         nav_payload_place.state = PayloadPlaceStateType_FlyToLocation;
                         return false;
-                    } else if (nav_payload_place.recovery_attempts == 4) { //Handy way to print once
-                        gcs().send_text(MAV_SEVERITY_WARNING, "Parcel recovery attempts exceeded. Ascending");
+                    } else if (nav_payload_place.recovery_attempts == (max_payload_recover_attempts + 1)) { //Handy way to print once
+                        gcs().send_text(MAV_SEVERITY_WARNING, "Failed to capture parcel after %i attempts. Ascending.", max_payload_recover_attempts);
                         nav_payload_place.recovery_attempts++;
                     }
                 }
