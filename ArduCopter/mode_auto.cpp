@@ -1111,7 +1111,9 @@ void ModeAuto::payload_place_run()
     }
 
     //Update the did_detect_target flag
-    if(!nav_payload_place.did_detect_target && copter.planck_interface.get_tag_tracking_state()) {
+    if(mission.get_current_nav_cmd().id == MAV_CMD_NAV_PAYLOAD_RECOVER &&
+       !nav_payload_place.did_detect_target &&
+       copter.planck_interface.get_tag_tracking_state()) {
         gcs().send_text(MAV_SEVERITY_INFO, "Started tracking target");
         nav_payload_place.did_detect_target = true;
     }
@@ -1835,7 +1837,7 @@ void ModeAuto::check_payload_recover_descent(uint32_t time_now) {
     //Update the heading target
     float heading_cd;
     copter.planck_interface.get_tag_heading_cd(heading_cd);
-    auto_yaw.set_fixed_yaw(heading_cd * 0.01f, 18., 0, false); //180deg/10s
+    auto_yaw.set_fixed_yaw(heading_cd * 0.01f, 1800, 0, false); //180deg/10s
 
     //If within 3m altitude of the target, ensure that we are within 20cm of the target and barely moving
     //If less than 1m altitude, just continue to descend

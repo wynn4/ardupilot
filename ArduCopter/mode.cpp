@@ -603,7 +603,7 @@ void Mode::land_run_horizontal_control(bool land_on_planck_target)
             }
         }
 
-        if (g.land_repositioning) {
+        if (g.land_repositioning && !land_on_planck_target) {
             // apply SIMPLE mode transform to pilot inputs
             update_simple_mode();
 
@@ -688,6 +688,10 @@ void Mode::land_run_horizontal_control(bool land_on_planck_target)
             // tell position controller we are applying an external limit
             pos_control->set_limit_accel_xy();
         }
+    }
+
+    if(land_on_planck_target) {
+        target_yaw_rate = 1800; //180deg/10s
     }
 
     // call attitude controller
