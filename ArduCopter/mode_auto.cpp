@@ -425,6 +425,13 @@ void ModeAuto::payload_place_start()
     // call location specific place start function
     payload_place_start(stopping_point);
 
+    //If this is a PAYLOAD_RECOVER, make sure the claw is opened
+    if(mission.get_current_nav_cmd().id == MAV_CMD_NAV_PAYLOAD_RECOVER && g2.gripper.valid()) {
+        if(!g2.gripper.released()) {
+            gcs().send_text(MAV_SEVERITY_INFO, "Releasing the gripper");
+            g2.gripper.release();
+        }
+    }
 }
 
 //Planck start methods
@@ -1666,14 +1673,6 @@ void ModeAuto::do_payload_place(const AP_Mission::Mission_Command& cmd)
     nav_payload_place.did_detect_target = false; //Assume we have not yet detected the target
     nav_payload_place.pause_descent = false;
     nav_payload_place.recovery_attempts = 0;
-
-    //If this is a PAYLOAD_RECOVER, make sure the claw is opened
-    if(cmd.id == MAV_CMD_NAV_PAYLOAD_RECOVER && g2.gripper.valid()) {
-        if(!g2.gripper.released()) {
-            gcs().send_text(MAV_SEVERITY_INFO, "Releasing the gripper");
-            g2.gripper.release();
-        }
-    }
 }
 
 // do_RTL - start Return-to-Launch
@@ -2006,6 +2005,7 @@ bool ModeAuto::verify_payload_place()
             }
         } else {
             if (g2.gripper.valid() && !g2.gripper.released()) {
+                gcs().send_text(MAV_SEVERITY_INFO, "Completed release");
                 return false;
             }
         }
@@ -2046,9 +2046,6 @@ bool ModeAuto::verify_payload_place()
                         tag_loc.set_alt_cm(target_alt_cm,Location::AltFrame::ABOVE_HOME);
                         wp_nav->set_wp_destination(tag_loc);
                         auto_yaw.set_mode(AUTO_YAW_FIXED);
-                        if (g2.gripper.valid()) {
-                            g2.gripper.release();
-                        }
                         nav_payload_place.state = PayloadPlaceStateType_FlyToLocation;
                         return false;
                     } else if (nav_payload_place.recovery_attempts == 4) { //Handy way to print once
