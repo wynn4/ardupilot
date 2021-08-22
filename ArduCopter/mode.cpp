@@ -691,10 +691,6 @@ void Mode::land_run_horizontal_control(bool land_on_planck_target)
         }
     }
 
-    if(land_on_planck_target && copter.planck_interface.get_tag_tracking_state()) {
-        target_yaw_rate = 1800; //180deg/10s
-    }
-
     // call attitude controller
     if (auto_yaw.mode() == AUTO_YAW_HOLD) {
         // roll & pitch from waypoint controller, yaw rate from pilot
