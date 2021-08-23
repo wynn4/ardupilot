@@ -1941,6 +1941,7 @@ void ModeAuto::check_payload_recover_descent(uint32_t time_now) {
                 } else if (time_now >= (nav_payload_recover.min_alt_tag_detection_wait_timestamp + tag_detection_wait_time)) {
                     //Timer expired
                     gcs().send_text(MAV_SEVERITY_WARNING, "Did not detect target. Ascending");
+                    nav_payload_recover.min_alt_tag_detection_wait_timestamp = 0;
                     nav_payload_recover.state = PayloadRecoverStateType_Ascending_Start;
                 }
             }
@@ -2146,8 +2147,8 @@ bool ModeAuto::verify_payload_recover()
             return false;
         }
 
-        //Throttle must be 10% higher than pre-recover hover throttle for a successful capture
-        if(current_throttle_level > (nav_payload_recover.hover_throttle_level + 0.1)) {
+        //Throttle must be 5% higher than pre-recover hover throttle for a successful capture
+        if(current_throttle_level > (nav_payload_recover.hover_throttle_level + 0.05)) {
             gcs().send_text(MAV_SEVERITY_INFO, "Successful parcel capture. Ascending.");
         } else {
             if(nav_payload_recover.recovery_attempts <= max_payload_recover_attempts) {
