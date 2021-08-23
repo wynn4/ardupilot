@@ -431,6 +431,7 @@ private:
     void payload_recover_run_capture();
     void payload_recover_look_for_detections_during_transit();
     void check_payload_recover_descent(uint32_t time_now);
+    void payload_recover_retry(bool due_to_detection = false);
 
     AutoMode _mode = Auto_TakeOff;   // controls which auto controller is run
 
@@ -538,6 +539,8 @@ private:
         bool did_detect_target; //if the target was being tracked at anytime
         bool pause_descent; //If we should pause the descent
         int recovery_attempts; //Number of times we've tried to get the parcel
+        const int max_attempts = 3; //Maximum number of times to try recovery
+        const uint32_t retry_altitude = 300; //3m
     } nav_payload_recover;
 
     bool _planck_used; //If planck is being used currently
