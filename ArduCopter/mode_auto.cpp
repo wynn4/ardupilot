@@ -1921,9 +1921,9 @@ void ModeAuto::check_payload_recover_descent(uint32_t time_now) {
     copter.planck_interface.get_target_posvel_NED(pos_ned, vel_ned_cms);
 
     //Handle the case where we are not currently tracking the target. The only case
-    //to consider is when we're below a min_alt threshold
+    //to consider is when we're below a min_alt threshold or if we're already waiting to detect
     if (!target_tracking) {
-        if(alt_above_ground <= MAX(300, (int32_t)nav_payload_recover.min_alt)) {
+        if(alt_above_ground <= MAX(300, (int32_t)nav_payload_recover.min_alt) || nav_payload_recover.min_alt_tag_detection_wait_timestamp != 0) {
             //We should pause the descent and wait for a timeout if:
             // 1. We've reached this minimum altitude and never saw the target.
             // 2. We previously saw the target and were descending, but have since lost it and are above the point of no return
