@@ -100,6 +100,7 @@ enum AutoMode {
     Auto_Loiter,
     Auto_LoiterToAlt,
     Auto_NavPayloadPlace,
+    Auto_NavPayloadRecover,
     Auto_PlanckTakeoff,
     Auto_PlanckRTB,
     Auto_PlanckWingman
@@ -150,6 +151,21 @@ enum PayloadPlaceStateType {
     PayloadPlaceStateType_Ascending_Start,
     PayloadPlaceStateType_Ascending,
     PayloadPlaceStateType_Done,
+};
+
+enum PayloadRecoverStateType {
+    PayloadRecoverStateType_FlyToLocation,
+    PayloadRecoverStateType_Calibrating_Hover_Start,
+    PayloadRecoverStateType_Calibrating_Hover,
+    PayloadRecoverStateType_Descending_Start,
+    PayloadRecoverStateType_Descending,
+    PayloadRecoverStateType_Capturing_Start,
+    PayloadRecoverStateType_Capturing,
+    PayloadRecoverStateType_Checking_Start,
+    PayloadRecoverStateType_Checking,
+    PayloadRecoverStateType_Ascending_Start,
+    PayloadRecoverStateType_Ascending,
+    PayloadRecoverStateType_Done,
 };
 
 // bit options for DEV_OPTIONS parameter

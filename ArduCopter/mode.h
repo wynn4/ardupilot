@@ -373,6 +373,7 @@ public:
     virtual bool has_user_takeoff(bool must_navigate) const override { return false; }
 
     void payload_place_start();
+    void payload_recover_start();
 
     // for GCS_MAVLink to call:
     bool do_guided(const AP_Mission::Mission_Command& cmd);
@@ -421,6 +422,13 @@ private:
     void payload_place_run_loiter();
     void payload_place_run_descend();
     void payload_place_run_release();
+    
+    void payload_recover_start(const Vector3f& destination);
+    void payload_recover_run();
+    bool payload_recover_run_should_run();
+    void payload_recover_run_loiter();
+    void payload_recover_run_descend();
+    void payload_recover_run_capture();
     void payload_recover_look_for_detections_during_transit();
     void check_payload_recover_descent(uint32_t time_now);
 
@@ -455,6 +463,7 @@ private:
     void do_winch(const AP_Mission::Mission_Command& cmd);
 #endif
     void do_payload_place(const AP_Mission::Mission_Command& cmd);
+    void do_payload_recover(const AP_Mission::Mission_Command& cmd);
     void do_RTL(void);
 
     void do_planck_takeoff(const AP_Mission::Mission_Command& cmd);
@@ -464,6 +473,7 @@ private:
     bool verify_takeoff();
     bool verify_land();
     bool verify_payload_place();
+    bool verify_payload_recover();
     bool verify_loiter_unlimited();
     bool verify_loiter_time(const AP_Mission::Mission_Command& cmd);
     bool verify_loiter_to_alt();
@@ -514,12 +524,21 @@ private:
         float descend_throttle_level;
         float descend_start_altitude;
         float descend_max; // centimetres
+    } nav_payload_place;
+
+    struct {
+        PayloadRecoverStateType state = PayloadRecoverStateType_Calibrating_Hover_Start; // records state of place (descending, releasing, released, ...)
+        uint32_t hover_start_timestamp; // milliseconds
+        uint32_t descend_start_timestamp; // milliseconds
+        uint32_t recover_start_timestamp; // milliseconds
+        float hover_throttle_level;
+        float descend_start_altitude;
         float min_alt; //centimeters
         uint32_t min_alt_tag_detection_wait_timestamp; //milliseconds
         bool did_detect_target; //if the target was being tracked at anytime
         bool pause_descent; //If we should pause the descent
         int recovery_attempts; //Number of times we've tried to get the parcel
-    } nav_payload_place;
+    } nav_payload_recover;
 
     bool _planck_used; //If planck is being used currently
 };
