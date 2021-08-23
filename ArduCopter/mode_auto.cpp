@@ -2263,6 +2263,7 @@ bool ModeAuto::verify_payload_place()
         FALLTHROUGH;
     case PayloadPlaceStateType_Descending_Start:
         nav_payload_place.descend_start_timestamp = now;
+        nav_payload_place.descend_start_altitude = inertial_nav.get_altitude();
         nav_payload_place.descend_throttle_level = 0;
         nav_payload_place.state = PayloadPlaceStateType_Descending;
         FALLTHROUGH;
@@ -2275,7 +2276,6 @@ bool ModeAuto::verify_payload_place()
             gcs().send_text(MAV_SEVERITY_WARNING, "Reached maximum descent");
             return false; // we'll do any cleanups required next time through the loop
         }
-
         // see if we've been descending long enough to calibrate a descend-throttle-level:
         if (is_zero(nav_payload_place.descend_throttle_level) &&
             now - nav_payload_place.descend_start_timestamp > descend_throttle_calibrate_time) {
@@ -2336,13 +2336,12 @@ bool ModeAuto::verify_payload_place()
         nav_payload_place.state = PayloadPlaceStateType_Ascending;
         }
         FALLTHROUGH;
-    case PayloadPlaceStateType_Ascending: {
+    case PayloadPlaceStateType_Ascending:
         if (!copter.wp_nav->reached_wp_destination()) {
             return false;
         }
         gcs().send_text(MAV_SEVERITY_INFO, "Payload place done");
         nav_payload_place.state = PayloadPlaceStateType_Done;
-        }
         FALLTHROUGH;
     case PayloadPlaceStateType_Done:
         return true;
