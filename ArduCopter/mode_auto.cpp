@@ -2162,13 +2162,13 @@ bool ModeAuto::verify_payload_recover()
 }
 
 void ModeAuto::payload_recover_retry(bool due_to_detection) {
-    if(nav_payload_recover.recovery_attempts < nav_payload_recover.max_attempts) {
-        if(nav_payload_recover.recovery_attempts == 0 || due_to_detection) { //timed-out looking for tag
-            gcs().send_text(MAV_SEVERITY_WARNING, "Detected target during ascent. Retrying.");
-        } else {
-            gcs().send_text(MAV_SEVERITY_WARNING, "Failed to capture parcel (no weight). Retrying.");
-        }
+    if(nav_payload_recover.recovery_attempts == 0 || due_to_detection) { //timed-out looking for tag
+        gcs().send_text(MAV_SEVERITY_WARNING, "Detected target during ascent");
+    } else {
+        gcs().send_text(MAV_SEVERITY_WARNING, "Failed to capture parcel (no weight)");
+    }
 
+    if(nav_payload_recover.recovery_attempts < nav_payload_recover.max_attempts) {
         Location retry_loc = copter.current_loc;
 
         //use the tag location, if its available
@@ -2182,11 +2182,12 @@ void ModeAuto::payload_recover_retry(bool due_to_detection) {
         wp_nav->set_wp_destination(retry_loc);
         auto_yaw.set_mode(AUTO_YAW_FIXED);
         nav_payload_recover.state = PayloadRecoverStateType_FlyToLocation;
-    } else if (nav_payload_recover.recovery_attempts == nav_payload_recover.max_attempts) { //Handy way to print once
-        gcs().send_text(MAV_SEVERITY_WARNING, "Failed to capture parcel after %i attempts.", nav_payload_recover.max_attempts);
-        nav_payload_recover.recovery_attempts++;
-        nav_payload_recover.state = PayloadRecoverStateType_Ascending_Start;
+        gcs().send_text(MAV_SEVERITY_WARNING, "Retrying recovery. Attempt %i", nav_payload_recover.recovery_attempts + 1);
+        return;
     }
+
+    gcs().send_text(MAV_SEVERITY_WARNING, "Failed to capture parcel after %i attempts.", nav_payload_recover.max_attempts);
+    nav_payload_recover.state = PayloadRecoverStateType_Ascending_Start;
 }
 
 // verify_payload_place - returns true if placing has been completed
