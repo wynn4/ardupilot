@@ -2185,6 +2185,7 @@ void ModeAuto::payload_recover_retry(bool due_to_detection) {
     } else if (nav_payload_recover.recovery_attempts == nav_payload_recover.max_attempts) { //Handy way to print once
         gcs().send_text(MAV_SEVERITY_WARNING, "Failed to capture parcel after %i attempts.", nav_payload_recover.max_attempts);
         nav_payload_recover.recovery_attempts++;
+        nav_payload_recover.state = PayloadRecoverStateType_Ascending_Start;
     }
 }
 
