@@ -439,6 +439,7 @@ void ModeAuto::payload_place_start()
 
     // call location specific place start function
     payload_place_start(stopping_point);
+
 }
 
 //Planck start methods
@@ -1996,7 +1997,7 @@ bool ModeAuto::verify_payload_recover()
     const float current_throttle_level = motors->get_throttle();
     const uint32_t now =  AP_HAL::millis();
 
-    // if we discover we've landed then immediately release the load:
+    // if we discover we've landed then immediately grab the load:
     if (copter.ap.land_complete) {
         switch (nav_payload_recover.state) {
         case PayloadRecoverStateType_FlyToLocation:
