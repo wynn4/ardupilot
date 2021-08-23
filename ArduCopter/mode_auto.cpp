@@ -1116,7 +1116,8 @@ void ModeAuto::payload_place_start(const Vector3f& destination)
 // Updates the waypoint target when a tag is detected
 void ModeAuto::payload_recover_look_for_detections_during_transit() {
     //Only applies to PAYLOAD_RECOVER operations during transit
-    if(!(nav_payload_recover.state == PayloadRecoverStateType_FlyToLocation)) {
+    if(!(mission.get_current_nav_cmd().id == MAV_CMD_NAV_PAYLOAD_RECOVER && 
+         nav_payload_recover.state == PayloadRecoverStateType_FlyToLocation)) {
         return;
     }
 
