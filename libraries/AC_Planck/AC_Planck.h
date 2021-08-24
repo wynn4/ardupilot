@@ -71,6 +71,12 @@ public:
 
   uint32_t mux_rates(float rate_up,  float rate_down);
 
+  bool was_last_takeoff_accepted() { return _last_takeoff_req_accepted;};
+
+  bool was_last_takeoff_rejected() { return _last_takeoff_req_rejected;};
+
+  bool waiting_for_takeoff_ack() { _waiting_for_planck_takeoff_ack;};
+
 private:
 
   struct
@@ -110,5 +116,7 @@ private:
   bool _waiting_for_planck_move_target_ack = false;
   bool _waiting_for_planck_stop_ack = false;
   bool _last_land_req_accepted = false;
+  bool _last_takeoff_req_accepted = false;
+  bool _last_takeoff_req_rejected = false;
 
 };

@@ -1157,6 +1157,18 @@ void ModeAuto::planck_takeoff_run()
         return;
     }
 
+//    // Don't continue with takeoff unless takeoff reqest was accepted
+//    if(copter.planck_interface.was_last_takeoff_rejected()) {
+//        // If takeoff was rejected, and we're on the groud, armed, and idling, then disarm
+//        if (copter.ap.land_complete && motors->get_spool_state() <= AP_Motors::SpoolState::GROUND_IDLE) {
+//            copter.arming.disarm();
+//        }
+//        return;
+//    }
+//    else if(!copter.planck_interface.ready_for_takeoff()){
+//      return;
+//    }
+
 #if FRAME_CONFIG == HELI_FRAME
     // helicopters stay in landed state until rotor speed runup has finished
     if (motors->rotor_runup_complete()) {

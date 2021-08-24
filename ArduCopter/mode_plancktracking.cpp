@@ -35,6 +35,17 @@ bool ModePlanckTracking::init(bool ignore_checks){
 
 void ModePlanckTracking::run() {
 
+    // if ACE hasn't accepted a takeoff request, disarm if armed on the ground, else do nothing
+    if(copter.planck_interface.waiting_for_takeoff_ack()) {
+        return;
+    }
+    // If takeoff was rejected, and we're on the groud, armed, and idling, then disarm
+    // NOTE: in mode_auto, copter.ap.land_complete is set to false right away, so can't use it to verify being on ground
+    else if (copter.planck_interface.was_last_takeoff_rejected() && (copter.ap.land_complete || copter.flightmode == &copter.mode_auto) && motors->get_spool_state() <= AP_Motors::SpoolState::GROUND_IDLE) {
+        copter.arming.disarm();
+        return;
+    }
+
     //If there is new command data, send it to Guided
     if(copter.planck_interface.new_command_available()) {
         switch(copter.planck_interface.get_cmd_type()) {

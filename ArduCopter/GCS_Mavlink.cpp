@@ -549,8 +549,7 @@ void GCS_MAVLINK_Copter::handle_command_ack(const mavlink_message_t &msg)
 {
     copter.command_ack_counter++;
 
-    if ((msg.sysid == copter.g.sysid_this_mav) && (msg.compid==PLANCK_CTRL_COMP_ID))
-    {
+    if ((msg.sysid == copter.g.sysid_this_mav) && (msg.compid == PLANCK_CTRL_COMP_ID)){
         copter.planck_interface.handle_planck_ack(msg);
     } else{
         GCS_MAVLINK::handle_command_ack(msg);

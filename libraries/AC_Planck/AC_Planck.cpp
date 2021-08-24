@@ -135,6 +135,7 @@ void AC_Planck::request_takeoff(const float alt)
     0,0,0,0,0);
 
   _waiting_for_planck_takeoff_ack = true;
+  _last_takeoff_req_accepted = false;
 }
 
 void AC_Planck::request_alt_change(const float alt, const float rate_up_cms, const float rate_down_cms)
@@ -290,12 +291,9 @@ void AC_Planck::handle_planck_ack(const mavlink_message_t &msg)
         if(!mavlink_msg_command_ack_get_result(&msg)){
 
           _status.takeoff_ready = false;
-
-          // If takeoff was rejected, and we're on the groud, armed, and idling, then disarm
-          if (copter.ap.land_complete && motors->get_spool_state() == AP_Motors::SpoolState::GROUND_IDLE) {
-              copter.arming.disarm();
-          }
+          _last_takeoff_req_accepted = false;
         }
+        _last_takeoff_req_accepted = true;
         break;
       case PLANCK_CMD_REQ_RTB:
         //no action for PLANCK_CMD_REQ_RTB ack/nack
