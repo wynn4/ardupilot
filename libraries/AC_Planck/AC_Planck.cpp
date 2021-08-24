@@ -292,8 +292,12 @@ void AC_Planck::handle_planck_ack(const mavlink_message_t &msg)
 
           _status.takeoff_ready = false;
           _last_takeoff_req_accepted = false;
+          _last_takeoff_req_rejected = true;
         }
-        _last_takeoff_req_accepted = true;
+        else {
+          _last_takeoff_req_accepted = true;
+          _last_takeoff_req_rejected = false;
+        }
         break;
       case PLANCK_CMD_REQ_RTB:
         //no action for PLANCK_CMD_REQ_RTB ack/nack
