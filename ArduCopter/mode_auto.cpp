@@ -428,6 +428,11 @@ void ModeAuto::payload_recover_start()
 
     // call location specific place start function
     payload_recover_start(stopping_point);
+
+    //Release the gripper if it is not already
+    if(g2.gripper.valid() && !g2.gripper.released()) {
+        g2.gripper.release();
+    }
 }
 
 // auto_payload_place_start - initialises controller to implement a placing
