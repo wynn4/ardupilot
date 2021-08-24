@@ -75,7 +75,7 @@ public:
 
   bool was_last_takeoff_rejected() { return _last_takeoff_req_rejected;};
 
-  bool waiting_for_takeoff_ack() { _waiting_for_planck_takeoff_ack;};
+  bool waiting_for_takeoff_ack() { return _waiting_for_planck_takeoff_ack;};
 
 private:
 
