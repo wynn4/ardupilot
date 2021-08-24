@@ -77,6 +77,8 @@ public:
 
   bool waiting_for_takeoff_ack() { return _waiting_for_planck_takeoff_ack;};
 
+  void set_last_takeoff_rejected(bool rejected) { _last_takeoff_req_rejected = rejected; };
+
 private:
 
   struct
