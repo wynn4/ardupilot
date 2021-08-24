@@ -1139,7 +1139,6 @@ void ModeAuto::payload_recover_look_for_detections_during_transit() {
     //Compare to the current desired location. If off by more than 1m, adjust the target
     if (wp_dest_loc.get_distance(above_tag_loc) > 1.0) {
         wp_nav->set_wp_destination(above_tag_loc);
-        auto_yaw.set_mode(AUTO_YAW_FIXED);
         gcs().send_text(MAV_SEVERITY_INFO, "Detected target, adjusting position");
     }
 
@@ -1964,7 +1963,6 @@ void ModeAuto::check_payload_recover_descent(uint32_t time_now) {
                 IGNORE_RETURN(copter.current_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME, current_alt_cm));
                 tag_loc.set_alt_cm(current_alt_cm,Location::AltFrame::ABOVE_HOME);
                 wp_nav->set_wp_destination(tag_loc);
-                auto_yaw.set_mode(AUTO_YAW_FIXED);
                 nav_payload_recover.state = PayloadRecoverStateType_FlyToLocation;
             }
         }
@@ -2185,7 +2183,6 @@ void ModeAuto::payload_recover_retry(bool due_to_detection) {
         }
         
         wp_nav->set_wp_destination(retry_loc);
-        auto_yaw.set_mode(AUTO_YAW_FIXED);
         nav_payload_recover.state = PayloadRecoverStateType_FlyToLocation;
         gcs().send_text(MAV_SEVERITY_WARNING, "Retrying recovery. Attempt %i", nav_payload_recover.recovery_attempts + 1);
         return;
