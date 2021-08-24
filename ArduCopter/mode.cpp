@@ -637,7 +637,7 @@ void Mode::land_run_horizontal_control(bool land_on_planck_target)
                 Vector3f target_pos_rel_home_cm = inertial_nav.get_position() + target_pos_neu_cm;
         
                 pos_control->set_xy_target(target_pos_rel_home_cm.x, target_pos_rel_home_cm.y);
-                pos_control->override_vehicle_velocity_xy(-Vector2f(target_vel_NED_cms.x, target_vel_NED_cms.y));
+                //pos_control->override_vehicle_velocity_xy(-Vector2f(target_vel_NED_cms.x, target_vel_NED_cms.y));
             }
             last_target_pos_NED = target_pos_NED;
             last_target_vel_NED_cms = target_vel_NED_cms;
