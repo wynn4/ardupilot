@@ -2353,7 +2353,6 @@ bool ModeAuto::verify_payload_place()
         int32_t lat_ddeg = abs(copter.current_loc.lat - lat_deg * 1E7);
         int32_t lon_ddeg = abs(copter.current_loc.lng - lon_deg * 1E7);
         gcs().send_text(MAV_SEVERITY_ALERT, "Location: %i.%i, %i.%i, %.1f", lat_deg, lat_ddeg, lon_deg, lon_ddeg, (float)alt_amsl_cm/100.);
-        nav_payload_place.state = PayloadPlaceStateType_Done;
         nav_payload_place.state = PayloadPlaceStateType_Released;
         }
         FALLTHROUGH;
