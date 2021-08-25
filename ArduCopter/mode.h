@@ -540,7 +540,7 @@ private:
         bool pause_descent; //If we should pause the descent
         int recovery_attempts; //Number of times we've tried to get the parcel
         const int max_attempts = 3; //Maximum number of times to try recovery
-        const uint32_t retry_altitude = 300; //3m
+        const int32_t retry_altitude = 400; //4m
     } nav_payload_recover;
 
     bool _planck_used; //If planck is being used currently

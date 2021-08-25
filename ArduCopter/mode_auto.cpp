@@ -433,6 +433,9 @@ void ModeAuto::payload_recover_start()
     if(g2.gripper.valid() && !g2.gripper.released()) {
         g2.gripper.release();
     }
+
+    //Assume we have not yet seen the target
+    nav_payload_recover.did_detect_target = false;
 }
 
 // auto_payload_place_start - initialises controller to implement a placing
@@ -1937,7 +1940,7 @@ void ModeAuto::check_payload_recover_descent(uint32_t time_now) {
     //Handle the case where we are not currently tracking the target. The only case
     //to consider is when we're below a min_alt threshold or if we're already waiting to detect
     if (!target_tracking) {
-        if(alt_above_ground <= MAX(300, (int32_t)nav_payload_recover.min_alt) || nav_payload_recover.min_alt_tag_detection_wait_timestamp != 0) {
+        if(alt_above_ground <= MAX(nav_payload_recover.retry_altitude, (int32_t)nav_payload_recover.min_alt) || nav_payload_recover.min_alt_tag_detection_wait_timestamp != 0) {
             //We should pause the descent and wait for a timeout if:
             // 1. We've reached this minimum altitude and never saw the target.
             // 2. We previously saw the target and were descending, but have since lost it and are above the point of no return
@@ -2180,17 +2183,17 @@ void ModeAuto::payload_recover_retry(bool due_to_detection) {
     }
 
     if(nav_payload_recover.recovery_attempts < nav_payload_recover.max_attempts) {
-        Location retry_loc = copter.current_loc;
-
         //use the tag location, if its available
+        Location retry_loc;
         if(copter.planck_interface.get_tag_loc(retry_loc)) {
             int32_t tag_alt_cm;
             IGNORE_RETURN(retry_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME, tag_alt_cm));
             int32_t target_alt_cm = tag_alt_cm + nav_payload_recover.retry_altitude;
             retry_loc.set_alt_cm(target_alt_cm,Location::AltFrame::ABOVE_HOME);
+            wp_nav->set_wp_destination(retry_loc);
         }
-        
-        wp_nav->set_wp_destination(retry_loc);
+
+        //No need to update the destination, as we're already where we want to start
         nav_payload_recover.state = PayloadRecoverStateType_FlyToLocation;
         gcs().send_text(MAV_SEVERITY_WARNING, "Retrying recovery. Attempt %i", nav_payload_recover.recovery_attempts + 1);
         return;
