@@ -1772,7 +1772,11 @@ void ModeAuto::do_payload_recover(const AP_Mission::Mission_Command& cmd)
         // set state to fly to location
         nav_payload_recover.state = PayloadRecoverStateType_FlyToLocation;
 
-        const Location target_loc = terrain_adjusted_location(cmd);
+        Location target_loc = loc_from_cmd(cmd);
+
+        if(cmd.content.location.alt == 0) {
+            target_loc = terrain_adjusted_location(cmd);
+        }
 
         wp_start(target_loc);
     } else {
@@ -1796,7 +1800,11 @@ void ModeAuto::do_payload_place(const AP_Mission::Mission_Command& cmd)
         // set state to fly to location
         nav_payload_place.state = PayloadPlaceStateType_FlyToLocation;
 
-        const Location target_loc = terrain_adjusted_location(cmd);
+        Location target_loc = loc_from_cmd(cmd);
+
+        if(cmd.content.location.alt == 0) {
+            target_loc = terrain_adjusted_location(cmd);
+        }
 
         wp_start(target_loc);
     } else {
