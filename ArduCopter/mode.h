@@ -534,13 +534,13 @@ private:
         uint32_t recover_start_timestamp; // milliseconds
         float hover_throttle_level;
         float descend_start_altitude;
-        float min_alt; //centimeters
+        Location expected_location;
         uint32_t min_alt_tag_detection_wait_timestamp; //milliseconds
         bool did_detect_target; //if the target was being tracked at anytime
         bool pause_descent; //If we should pause the descent
         int recovery_attempts; //Number of times we've tried to get the parcel
         const int max_attempts = 3; //Maximum number of times to try recovery
-        const int32_t retry_altitude = 400; //4m
+        const int32_t retry_altitude = 400; //4m above expected location
     } nav_payload_recover;
 
     bool _planck_used; //If planck is being used currently

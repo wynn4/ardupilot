@@ -1138,6 +1138,9 @@ void ModeAuto::payload_recover_look_for_detections_during_transit() {
     Location above_tag_loc;
     if(!copter.planck_interface.get_tag_loc(above_tag_loc)) { return; }
 
+    //update the expected location
+    nav_payload_recover.expected_location = above_tag_loc;
+
     above_tag_loc.alt = wp_dest_loc.alt; //Use the current altitude
     //Compare to the current desired location. If off by more than 1m, adjust the target
     if (wp_dest_loc.get_distance(above_tag_loc) > 1.0) {
@@ -1770,29 +1773,44 @@ void ModeAuto::do_winch(const AP_Mission::Mission_Command& cmd)
 // do_payload_recover - initiate recover procedure
 void ModeAuto::do_payload_recover(const AP_Mission::Mission_Command& cmd)
 {
-    // if location provided we fly to that location at current altitude
-    if (cmd.content.location.lat != 0 || cmd.content.location.lng != 0) {
+    //Waypoint location is the expected position of the target
+    nav_payload_recover.expected_location = loc_from_cmd(cmd);
+
+    //if the location has a zero altitude, use the current home-alt
+    if(cmd.content.location.alt == 0) {
+        nav_payload_recover.expected_location.set_alt_cm(0, Location::AltFrame::ABOVE_HOME);
+    }
+
+    //The start location is the expected location + start_height
+    int32_t start_height = MAX(cmd.p1, nav_payload_recover.retry_altitude);
+
+    Location start_loc = nav_payload_recover.expected_location;
+    start_loc.alt += start_height;
+
+    if (cmd.content.location.lat != 0 || cmd.content.location.lng != 0){
         // set state to fly to location
         nav_payload_recover.state = PayloadRecoverStateType_FlyToLocation;
 
-        Location target_loc = loc_from_cmd(cmd);
-
-        if(cmd.content.location.alt == 0) {
-            target_loc = terrain_adjusted_location(cmd);
-        }
-
-        wp_start(target_loc);
+        wp_start(start_loc);
     } else {
         nav_payload_recover.state = PayloadRecoverStateType_Calibrating_Hover_Start;
 
         // initialise recover controller
         payload_recover_start();
     }
-    nav_payload_recover.min_alt = cmd.p1;
+
     nav_payload_recover.min_alt_tag_detection_wait_timestamp = 0; //Initialize at zero
     nav_payload_recover.did_detect_target = false; //Assume we have not yet detected the target
     nav_payload_recover.pause_descent = false;
     nav_payload_recover.recovery_attempts = 0;
+
+    int32_t lat_deg = nav_payload_recover.expected_location.lat/1E7;
+    int32_t lon_deg = nav_payload_recover.expected_location.lng/1E7;
+    int32_t lat_ddeg = abs(nav_payload_recover.expected_location.lat - lat_deg * 1E7);
+    int32_t lon_ddeg = abs(nav_payload_recover.expected_location.lng - lon_deg * 1E7);
+    int32_t alt_cm;
+    IGNORE_RETURN(nav_payload_recover.expected_location.get_alt_cm(Location::AltFrame::ABSOLUTE, alt_cm));
+    gcs().send_text(MAV_SEVERITY_ALERT, "Searching %i.%i, %i.%i, %.1f", lat_deg, lat_ddeg, lon_deg, lon_ddeg, (float)alt_cm/100.);
 }
 
 // do_payload_place - initiate placing procedure
@@ -1924,11 +1942,11 @@ void ModeAuto::check_payload_recover_descent(uint32_t time_now) {
     const float alt_of_no_return = 1.0;            //"Just go for it" below this altitude
     const uint16_t tag_detection_wait_time = 5000; //ms of time to wait before giving up
 
-    //Get current altitude above terrain, if available
-    int32_t alt_above_ground;
-    if (!copter.current_loc.get_alt_cm(Location::AltFrame::ABOVE_TERRAIN, alt_above_ground)) {
-        IGNORE_RETURN(copter.current_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME, alt_above_ground));
-    }
+    //Get current altitude above expected target location
+    int32_t alt_above_expected_location, current_alt_amsl, expected_alt_amsl;
+    IGNORE_RETURN(copter.current_loc.get_alt_cm(Location::AltFrame::ABSOLUTE, current_alt_amsl));
+    IGNORE_RETURN(nav_payload_recover.expected_location.get_alt_cm(Location::AltFrame::ABSOLUTE, expected_alt_amsl));
+    alt_above_expected_location = current_alt_amsl - expected_alt_amsl;
 
     //Are we currently tracking the target
     bool target_tracking = copter.planck_interface.get_tag_tracking_state();
@@ -1940,7 +1958,7 @@ void ModeAuto::check_payload_recover_descent(uint32_t time_now) {
     //Handle the case where we are not currently tracking the target. The only case
     //to consider is when we're below a min_alt threshold or if we're already waiting to detect
     if (!target_tracking) {
-        if(alt_above_ground <= MAX(nav_payload_recover.retry_altitude, (int32_t)nav_payload_recover.min_alt) || nav_payload_recover.min_alt_tag_detection_wait_timestamp != 0) {
+        if(alt_above_expected_location <= nav_payload_recover.retry_altitude || nav_payload_recover.min_alt_tag_detection_wait_timestamp != 0) {
             //We should pause the descent and wait for a timeout if:
             // 1. We've reached this minimum altitude and never saw the target.
             // 2. We previously saw the target and were descending, but have since lost it and are above the point of no return
@@ -1967,6 +1985,9 @@ void ModeAuto::check_payload_recover_descent(uint32_t time_now) {
         //Check for GPS positions. If a target GPS position comes in, update the loiter X/Y target
         Location tag_loc;
         if(copter.planck_interface.get_commbox_state() && copter.planck_interface.get_tag_loc(tag_loc)) {
+            //Update the expected location
+            nav_payload_recover.expected_location = tag_loc;
+
             //If the GPS tag location differs from the current target by more than 0.5m, update the target position
             if(Location(pos_control->get_pos_target()).get_distance(tag_loc) > 0.5) {
                 gcs().send_text(MAV_SEVERITY_INFO, "Detected target, adjusting position");
@@ -2186,6 +2207,7 @@ void ModeAuto::payload_recover_retry(bool due_to_detection) {
         //use the tag location, if its available
         Location retry_loc;
         if(copter.planck_interface.get_tag_loc(retry_loc)) {
+            nav_payload_recover.expected_location = retry_loc;
             int32_t tag_alt_cm;
             IGNORE_RETURN(retry_loc.get_alt_cm(Location::AltFrame::ABOVE_HOME, tag_alt_cm));
             int32_t target_alt_cm = tag_alt_cm + nav_payload_recover.retry_altitude;
