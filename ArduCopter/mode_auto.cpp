@@ -2307,13 +2307,22 @@ bool ModeAuto::verify_payload_place()
 #endif
         nav_payload_place.state = PayloadPlaceStateType_Releasing;
         FALLTHROUGH;
-    case PayloadPlaceStateType_Releasing:
+    case PayloadPlaceStateType_Releasing: {
 #if GRIPPER_ENABLED == ENABLED
         if (g2.gripper.valid() && !g2.gripper.released()) {
             return false;
         }
 #endif
+        int32_t alt_amsl_cm;
+        IGNORE_RETURN(copter.current_loc.get_alt_cm(Location::AltFrame::ABSOLUTE, alt_amsl_cm));
+        int32_t lat_deg = copter.current_loc.lat/1E7;
+        int32_t lon_deg = copter.current_loc.lng/1E7;
+        int32_t lat_ddeg = abs(copter.current_loc.lat - lat_deg * 1E7);
+        int32_t lon_ddeg = abs(copter.current_loc.lng - lon_deg * 1E7);
+        gcs().send_text(MAV_SEVERITY_ALERT, "Location: %i.%i, %i.%i, %.1f", lat_deg, lat_ddeg, lon_deg, lon_ddeg, (float)alt_amsl_cm/100.);
+        nav_payload_place.state = PayloadPlaceStateType_Done;
         nav_payload_place.state = PayloadPlaceStateType_Released;
+        }
         FALLTHROUGH;
     case PayloadPlaceStateType_Released: {
         nav_payload_place.state = PayloadPlaceStateType_Ascending_Start;
@@ -2332,7 +2341,7 @@ bool ModeAuto::verify_payload_place()
             return false;
         }
         gcs().send_text(MAV_SEVERITY_INFO, "Payload place done");
-        nav_payload_place.state = PayloadPlaceStateType_Done;
+        
         FALLTHROUGH;
     case PayloadPlaceStateType_Done:
         return true;
