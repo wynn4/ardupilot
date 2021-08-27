@@ -22,7 +22,7 @@ bool ModePlanckRTB::init(bool ignore_checks){
 }
 
 void ModePlanckRTB::run(){
-    if(_is_landing && copter.planck_interface.was_last_request_rejected()) {
+    if(_is_landing && copter.planck_interface.was_last_request_rejected() && (copter.planck_interface.get_last_cmd_req_id() == PLANCK_CMD_REQ_LAND)) {
         _is_landing = false;
     }
 
