@@ -36,17 +36,22 @@ bool ModePlanckTracking::init(bool ignore_checks){
 void ModePlanckTracking::run() {
 
     // if ACE hasn't accepted a takeoff request, disarm if armed on the ground, else do nothing
-    if(copter.planck_interface.waiting_for_ack() == PLANCK_CMD_REQ_TAKEOFF ) {
-        copter.gcs().send_text(MAV_SEVERITY_INFO,
-          "Waiting for ACE takeoff confirmation");
+    if(copter.planck_interface.waiting_for_ack() == PLANCK_CMD_REQ_TAKEOFF  ||  copter.planck_interface.get_last_cmd_req_t_ms() == 0) {
+
+        if (AP_HAL::millis() > _next_gcs_message_t_ms){
+            copter.gcs().send_text(MAV_SEVERITY_INFO, "Waiting for ACE takeoff confirmation");
+            _next_gcs_message_t_ms = AP_HAL::millis() + _gcs_msg_wait_t_ms;
+        }
         return;
     }
     // If takeoff was rejected, and we're on the groud, armed, and idling, then disarm
     // NOTE: in mode_auto, copter.ap.land_complete is set to false right away, so can't use it to verify being on ground
     else if (copter.planck_interface.was_last_request_rejected() && copter.planck_interface.get_last_cmd_req_id() == PLANCK_CMD_REQ_TAKEOFF &&  copter.planck_interface.get_last_cmd_req_t_ms() > 0 && (copter.ap.land_complete || copter.flightmode == &copter.mode_auto) && motors->get_spool_state() <= AP_Motors::SpoolState::GROUND_IDLE) {
-        copter.gcs().send_text(MAV_SEVERITY_CRITICAL,
-          "ACE rejected takeoff: Disarming");
-        copter.arming.disarm();
+        if(!_takeoff_rejected_disarm || copter.arming.is_armed()){
+            copter.gcs().send_text(MAV_SEVERITY_CRITICAL, "ACE rejected takeoff: Disarming");
+            copter.arming.disarm();
+            _takeoff_rejected_disarm = true;
+        }
         return;
     }
 
@@ -218,6 +223,7 @@ bool ModePlanckTracking::do_user_takeoff_start(float final_alt_above_home)
     if(!copter.planck_interface.ready_for_takeoff())
       return false;
 
+    _takeoff_rejected_disarm = false;
     // Tell planck to start commanding
     copter.planck_interface.request_takeoff(final_alt_above_home/100.);
 

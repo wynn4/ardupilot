@@ -1518,6 +1518,9 @@ protected:
 
     //if we want to land or transition to planck_land when we get back
     bool _land_when_ready = false;
+    bool _takeoff_rejected_disarm = false;
+    uint32_t _next_gcs_message_t_ms = 0;
+    uint32_t _gcs_msg_wait_t_ms = 1000;
 };
 
 class ModePlanckRTB : public ModeGuided {

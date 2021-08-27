@@ -71,14 +71,6 @@ public:
 
   uint32_t mux_rates(float rate_up,  float rate_down);
 
-//  bool was_last_takeoff_accepted() { return _last_takeoff_req_accepted;};
-
-//  bool was_last_takeoff_rejected() { return _last_takeoff_req_rejected;};
-
-//  bool waiting_for_takeoff_ack() { return _waiting_for_planck_takeoff_ack;};
-
-//  void set_last_takeoff_rejected(bool rejected) { _last_takeoff_req_rejected = rejected; };
-
   //Returns true if the last command req was actively NACKd or timed out
   bool was_last_request_rejected() {
     if(_ack_status == PLANCK_WAITING_FOR_ACK && ((AP_HAL::millis() - _last_cmd_req_t_ms) > 500)) {
@@ -87,13 +79,11 @@ public:
     return (_ack_status == PLANCK_NACK);
   }
 
+  //If waiting for an ack, it returns the the last cmd req set, otherwise returns -1
   int waiting_for_ack() {
     if(_ack_status == PLANCK_WAITING_FOR_ACK){
       if((AP_HAL::millis() - _last_cmd_req_t_ms) <= 500) {
           return _last_cmd_req_id;
-      }
-      else{
-        _set_ack_status(PLANCK_NACK);
       }
     }
     return -1;
@@ -139,7 +129,9 @@ private:
 
   uint32_t _last_cmd_req_t_ms = 0;
   uint32_t _last_ack_t_ms = 0;
-  uint16_t _last_cmd_req_id;
+  uint32_t _next_gcs_message_t_ms = 0;
+  uint32_t _gcs_msg_wait_t_ms = 1000;
+  int16_t _last_cmd_req_id = -1;
 
   mavlink_channel_t _chan = MAVLINK_COMM_1;
 
