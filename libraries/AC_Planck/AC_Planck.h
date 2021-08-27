@@ -71,13 +71,33 @@ public:
 
   uint32_t mux_rates(float rate_up,  float rate_down);
 
-  bool was_last_takeoff_accepted() { return _last_takeoff_req_accepted;};
+//  bool was_last_takeoff_accepted() { return _last_takeoff_req_accepted;};
 
-  bool was_last_takeoff_rejected() { return _last_takeoff_req_rejected;};
+//  bool was_last_takeoff_rejected() { return _last_takeoff_req_rejected;};
 
-  bool waiting_for_takeoff_ack() { return _waiting_for_planck_takeoff_ack;};
+//  bool waiting_for_takeoff_ack() { return _waiting_for_planck_takeoff_ack;};
 
-  void set_last_takeoff_rejected(bool rejected) { _last_takeoff_req_rejected = rejected; };
+//  void set_last_takeoff_rejected(bool rejected) { _last_takeoff_req_rejected = rejected; };
+
+  //Returns true if the last command req was actively NACKd or timed out
+  bool was_last_request_rejected() {
+    if(_ack_status == PLANCK_WAITING_FOR_ACK && ((AP_HAL::millis() - _last_cmd_req_t_ms) > 500)) {
+      _set_ack_status(PLANCK_NACK);
+    }
+    return (_ack_status == PLANCK_NACK);
+  }
+
+  uint8_t waiting_for_ack() {
+    if(_ack_status == PLANCK_WAITING_FOR_ACK){
+      if((AP_HAL::millis() - _last_cmd_req_t_ms) <= 500) {
+          return _last_cmd_req_id;
+      }
+      else{
+        _set_ack_status(PLANCK_NACK);
+      }
+    }
+    return 0;
+  }
 
 private:
 
@@ -106,19 +126,37 @@ private:
     uint32_t timestamp_ms = 0;
   }_status;
 
+  enum planck_ack_status
+  {
+    PLANCK_ACK,
+    PLANCK_NACK,
+    PLANCK_WAITING_FOR_ACK
+  } _ack_status = PLANCK_WAITING_FOR_ACK;
+
+  uint32_t _last_cmd_req_t_ms = 0;
+  uint32_t _last_ack_t_ms = 0;
+  uint16_t _last_cmd_req_id;
+
   mavlink_channel_t _chan = MAVLINK_COMM_1;
 
   bool _was_at_location = false; //For debouncing at-location
 
   bool _is_status_ok(void) { return ((AP_HAL::millis() - _status.timestamp_ms) < 500); }
 
-  bool _waiting_for_planck_takeoff_ack = false;
-  bool _waiting_for_planck_rtb_ack = false;
-  bool _waiting_for_planck_land_ack = false;
-  bool _waiting_for_planck_move_target_ack = false;
-  bool _waiting_for_planck_stop_ack = false;
-  bool _last_land_req_accepted = false;
-  bool _last_takeoff_req_accepted = false;
-  bool _last_takeoff_req_rejected = false;
+  void _sent_cmd_req(uint16_t id) {
+    _last_cmd_req_t_ms = AP_HAL::millis();
+    _ack_status = PLANCK_WAITING_FOR_ACK;
+    _last_cmd_req_id = id;
+  };
+
+  void _set_ack_status(planck_ack_status ack_status){ _ack_status = ack_status; };
+//  bool _waiting_for_planck_takeoff_ack = false;
+//  bool _waiting_for_planck_rtb_ack = false;
+//  bool _waiting_for_planck_land_ack = false;
+//  bool _waiting_for_planck_move_target_ack = false;
+//  bool _waiting_for_planck_stop_ack = false;
+//  bool _last_land_req_accepted = false;
+//  bool _last_takeoff_req_accepted = false;
+//  bool _last_takeoff_req_rejected = false;
 
 };

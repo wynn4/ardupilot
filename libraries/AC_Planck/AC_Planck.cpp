@@ -13,8 +13,8 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
         mavlink_planck_status_t ps;
         mavlink_msg_planck_status_decode(mav_msg, &ps);
         _status.timestamp_ms = AP_HAL::millis();
-        _status.takeoff_ready = (bool)ps.takeoff_ready && !_waiting_for_planck_takeoff_ack;
-        _status.land_ready = (bool)ps.land_ready && !_waiting_for_planck_land_ack && _last_land_req_accepted;
+        _status.takeoff_ready = (bool)ps.takeoff_ready;
+        _status.land_ready = (bool)ps.land_ready;
         _status.commbox_ok = (bool)(ps.failsafe & 0x01);
         _status.commbox_gps_ok = (bool)(ps.failsafe & 0x02);
         _status.tracking_tag = (bool)(ps.status & 0x01);
@@ -134,8 +134,7 @@ void AC_Planck::request_takeoff(const float alt)
     alt,                   //float param1
     0,0,0,0,0);
 
-  _waiting_for_planck_takeoff_ack = true;
-  _last_takeoff_req_accepted = false;
+  _sent_cmd_req(PLANCK_CMD_REQ_TAKEOFF);
 }
 
 void AC_Planck::request_alt_change(const float alt, const float rate_up_cms, const float rate_down_cms)
@@ -156,7 +155,7 @@ void AC_Planck::request_alt_change(const float alt, const float rate_up_cms, con
     0,                //param5
     *reinterpret_cast<float*>(&(muxed_rates)));           //param6
 
-  _waiting_for_planck_move_target_ack = true;
+  _sent_cmd_req(PLANCK_CMD_REQ_MOVE_TARGET);
 }
 
 void AC_Planck::request_rtb(const float alt, const float rate_up, const float rate_down, const float rate_xy)
@@ -173,7 +172,7 @@ void AC_Planck::request_rtb(const float alt, const float rate_up, const float ra
     rate_xy,               //float param4
     0,0);
 
-   _waiting_for_planck_rtb_ack = true;
+  _sent_cmd_req(PLANCK_CMD_REQ_RTB);
 }
 
 void AC_Planck::request_land(const float descent_rate)
@@ -187,7 +186,7 @@ void AC_Planck::request_land(const float descent_rate)
     descent_rate,          //float param1
     0,0,0,0,0);
 
-  _waiting_for_planck_land_ack = true;
+  _sent_cmd_req(PLANCK_CMD_REQ_LAND);
 }
 
 //Move the current tracking target, either to an absolute offset or by a rate
@@ -212,7 +211,7 @@ void AC_Planck::request_move_target(const Vector3f offset_cmd_NED, const bool is
   //If the target has moved, the _was_at_location flag must go false until we
   //hear otherwise from planck
   _was_at_location = false;
-  _waiting_for_planck_move_target_ack = true;
+  _sent_cmd_req(PLANCK_CMD_REQ_MOVE_TARGET);
 }
 
 void AC_Planck::stop_commanding(void)
@@ -224,7 +223,7 @@ void AC_Planck::stop_commanding(void)
     PLANCK_CMD_REQ_STOP,   //uint8_t type
     0,0,0,0,0,0);
 
-  _waiting_for_planck_stop_ack = true;
+  _sent_cmd_req(PLANCK_CMD_REQ_STOP);
 }
 
 //Get an accel, yaw, z_rate command
@@ -282,52 +281,14 @@ bool AC_Planck::get_posvel_cmd(Location &loc, Vector3f &vel_cms, float &yaw_cd, 
 
 void AC_Planck::handle_planck_ack(const mavlink_message_t &msg)
 {
-      switch (mavlink_msg_command_ack_get_command(&msg)) {
+    mavlink_command_ack_t ack;
+    mavlink_msg_command_ack_decode(&msg, &ack);
 
-      case PLANCK_CMD_REQ_TAKEOFF:
-        _waiting_for_planck_takeoff_ack = false;
+    if(ack.command == _last_cmd_req_id && _last_cmd_req_t_ms > 0) {
+      _ack_status = (ack.result == 1 ? PLANCK_ACK : PLANCK_NACK);
+    }
 
-        // If PLANCK_CMD_REQ_TAKEOFF is rejected, set _status.takeoff_ready to false
-        if(!mavlink_msg_command_ack_get_result(&msg)){
-
-          _status.takeoff_ready = false;
-          _last_takeoff_req_accepted = false;
-          _last_takeoff_req_rejected = true;
-        }
-        else {
-          _last_takeoff_req_accepted = true;
-          _last_takeoff_req_rejected = false;
-        }
-        break;
-      case PLANCK_CMD_REQ_RTB:
-        //no action for PLANCK_CMD_REQ_RTB ack/nack
-        _waiting_for_planck_rtb_ack = false;
-      case PLANCK_CMD_REQ_LAND:
-        _waiting_for_planck_land_ack = false;
-
-        // If PLANCK_CMD_REQ_LAND is rejected, set _status.land_ready to false
-        if(!mavlink_msg_command_ack_get_result(&msg)){
-
-          _status.land_ready = false;
-          _last_land_req_accepted = false;
-        }
-        else{
-          _last_land_req_accepted = true;
-        }
-        break;
-      case PLANCK_CMD_REQ_MOVE_TARGET:
-        //no action for PLANCK_CMD_REQ_MOVE_TARGET ack/nack
-        _waiting_for_planck_move_target_ack = false;
-        break;
-      case PLANCK_CMD_REQ_STOP:
-        //no action for PLANCK_CMD_REQ_STOP ack/nack
-        _waiting_for_planck_stop_ack = false;
-        break;
-
-      default:
-        break;
-
-      }
+    _last_ack_t_ms = AP_HAL::millis();
 }
 
 uint32_t AC_Planck::mux_rates(float rate_up,  float rate_down)
