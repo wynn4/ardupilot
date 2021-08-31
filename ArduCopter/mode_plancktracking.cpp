@@ -188,6 +188,11 @@ void ModePlanckTracking::run() {
               break;
           }
 
+          case copter.planck_interface.NONE:
+          {
+              copter.mode_guided.reset_update_times();
+          }
+
           default:
             break;
       }

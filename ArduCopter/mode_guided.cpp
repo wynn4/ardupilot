@@ -788,4 +788,11 @@ float ModeGuided::crosstrack_error() const
     }
 }
 
+void ModeGuided::reset_update_times()
+{
+    vel_update_time_ms = 0;
+    posvel_update_time_ms = 0;
+    guided_angle_state.update_time_ms = 0;
+}
+
 #endif
