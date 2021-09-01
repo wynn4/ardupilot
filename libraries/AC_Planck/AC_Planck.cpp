@@ -287,6 +287,7 @@ uint32_t AC_Planck::mux_rates(float rate_up,  float rate_down)
 
 bool AC_Planck::new_command_available()
 {
+  // not a new command if it's more than 100 ms old
   if (_cmd.is_new && command_timed_out())
     _cmd.is_new = false;
 
@@ -295,5 +296,6 @@ bool AC_Planck::new_command_available()
 
 bool AC_Planck::command_timed_out()
 {
+  // _cmd is timed out if it's been set and is more than 100 ms old
   return ((AP_HAL::millis() -_cmd.timestamp_ms) > 100) && (_cmd.timestamp_ms > 0);
 };

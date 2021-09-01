@@ -192,6 +192,7 @@ void ModePlanckTracking::run() {
             break;
       }
     }
+    // If ACE stopped sending commands, reset guided mode update times so guided timeout triggers immediately
     else if(copter.planck_interface.command_timed_out())
     {
         if(should_reset_update_times())
