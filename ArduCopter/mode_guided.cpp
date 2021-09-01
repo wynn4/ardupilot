@@ -795,4 +795,11 @@ void ModeGuided::reset_update_times()
     guided_angle_state.update_time_ms = 0;
 }
 
+bool ModeGuided::update_run_once()
+{
+
+    return (vel_update_time_ms > 0) || (posvel_update_time_ms > 0) || (guided_angle_state.update_time_ms > 0);
+
+}
+
 #endif

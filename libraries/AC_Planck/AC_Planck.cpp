@@ -115,6 +115,7 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
 
         //This is a new command
         _cmd.is_new = true;
+        _cmd.timestamp_ms = AP_HAL::millis();
         break;
     }
 
@@ -282,4 +283,17 @@ uint32_t AC_Planck::mux_rates(float rate_up,  float rate_down)
   uint32_t muxed_rates = ((uint32_t(rate_up) << 16) | uint32_t(rate_down));
   muxed_rates = (muxed_rates & 0x7FFF7FFF) | 0x00008000;
   return muxed_rates;
+};
+
+bool AC_Planck::new_command_available()
+{
+  if (_cmd.is_new && command_timed_out())
+    _cmd.is_new = false;
+
+  return _cmd.is_new;
+};
+
+bool AC_Planck::command_timed_out()
+{
+  return ((AP_HAL::millis() -_cmd.timestamp_ms) > 100) && (_cmd.timestamp_ms > 0);
 };

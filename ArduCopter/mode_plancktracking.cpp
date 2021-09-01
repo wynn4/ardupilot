@@ -188,14 +188,16 @@ void ModePlanckTracking::run() {
               break;
           }
 
-          case copter.planck_interface.NONE:
-          {
-              copter.mode_guided.reset_update_times();
-          }
-
           default:
             break;
       }
+    }
+    else if(copter.planck_interface.command_timed_out())
+    {              printf(" test NoCommand \n");
+    	      if(update_run_once()){
+              printf(" GOT NoCommand, resetting update times \n");
+              copter.mode_guided.reset_update_times();
+              }
     }
 
     //Run the guided mode controller
