@@ -287,8 +287,13 @@ uint32_t AC_Planck::mux_rates(float rate_up,  float rate_down)
 
 bool AC_Planck::new_command_available()
 {
-  if (_cmd.is_new && ((AP_HAL::millis() -_cmd.timestamp_ms) > 100))
+  if (_cmd.is_new && command_timed_out())
     _cmd.is_new = false;
 
   return _cmd.is_new;
+};
+
+bool AC_Planck::command_timed_out()
+{
+  return ((AP_HAL::millis() -_cmd.timestamp_ms) > 100) && (_cmd.timestamp_ms > 0);
 };

@@ -192,6 +192,13 @@ void ModePlanckTracking::run() {
             break;
       }
     }
+    else if(copter.planck_interface.command_timed_out())
+    {
+        if(should_reset_update_times())
+        {
+            copter.mode_guided.reset_update_times();
+        }
+    }
 
     //Run the guided mode controller
     ModeGuided::run(true); //use high-jerk
