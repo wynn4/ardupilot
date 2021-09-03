@@ -9,6 +9,8 @@
 
 //Defines the interface to Planck's control software
 
+#define ACK_WAIT_TIME_MS 500
+
 class AC_Planck {
 
 public:
@@ -72,26 +74,14 @@ public:
   uint32_t mux_rates(float rate_up,  float rate_down);
 
   //Returns true if the last command req was actively NACKd or timed out
-  bool was_last_request_rejected() {
-    if(_ack_status == PLANCK_WAITING_FOR_ACK && ((AP_HAL::millis() - _last_cmd_req_t_ms) > 500)) {
-      _set_ack_status(PLANCK_NACK);
-    }
-    return (_ack_status == PLANCK_NACK);
-  }
+  bool was_last_request_rejected();
 
   //If waiting for an ack, it returns the the last cmd req set, otherwise returns -1
-  int waiting_for_ack() {
-    if(_ack_status == PLANCK_WAITING_FOR_ACK){
-      if((AP_HAL::millis() - _last_cmd_req_t_ms) <= 500) {
-          return _last_cmd_req_id;
-      }
-    }
-    return -1;
-  }
+  int waiting_for_ack();
 
-  uint16_t get_last_cmd_req_id()  { return _last_cmd_req_id; };
+  uint16_t get_last_cmd_req_id()  { return _cmd_req_info.last_cmd_req_id; };
 
-  uint32_t get_last_cmd_req_t_ms() { return _last_cmd_req_t_ms; };
+  uint32_t get_last_cmd_req_t_ms() { return _cmd_req_info.last_cmd_req_t_ms; };
 
 private:
 
@@ -117,34 +107,36 @@ private:
     bool tracking_commbox_gps = false;
     bool takeoff_complete = false;
     bool at_location = false;
-    uint32_t timestamp_ms = 0;
   }_status;
 
   enum planck_ack_status
   {
+    NOT_WAITING,
     PLANCK_ACK,
     PLANCK_NACK,
     PLANCK_WAITING_FOR_ACK
-  } _ack_status = PLANCK_WAITING_FOR_ACK;
+  };
 
-  uint32_t _last_cmd_req_t_ms = 0;
-  uint32_t _last_ack_t_ms = 0;
-  uint32_t _next_gcs_message_t_ms = 0;
-  uint32_t _gcs_msg_wait_t_ms = 1000;
-  int16_t _last_cmd_req_id = -1;
+  struct
+  {
+    uint32_t last_cmd_req_t_ms = 0;
+    int16_t last_cmd_req_id = -1;
+    planck_ack_status ack_status = NOT_WAITING;
+  } _cmd_req_info;
+
 
   mavlink_channel_t _chan = MAVLINK_COMM_1;
 
   bool _was_at_location = false; //For debouncing at-location
 
-  bool _is_status_ok(void) { return ((AP_HAL::millis() - _status.timestamp_ms) < 500); }
+  bool _is_status_ok(void) { return ((AP_HAL::millis() - _status.timestamp_ms) < ACK_WAIT_TIME_MS); }
 
   void _sent_cmd_req(uint16_t id) {
-    _last_cmd_req_t_ms = AP_HAL::millis();
-    _ack_status = PLANCK_WAITING_FOR_ACK;
-    _last_cmd_req_id = id;
+    _cmd_req_info.last_cmd_req_t_ms = AP_HAL::millis();
+    _cmd_req_info.ack_status = PLANCK_WAITING_FOR_ACK;
+    _cmd_req_info.last_cmd_req_id = id;
   };
 
-  void _set_ack_status(planck_ack_status ack_status){ _ack_status = ack_status; };
+  void _set_ack_status(planck_ack_status ack_status){ _cmd_req_info.ack_status = ack_status; };
 
 };
