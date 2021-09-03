@@ -284,22 +284,33 @@ void AC_Planck::handle_planck_ack(const mavlink_message_t &msg)
     mavlink_command_ack_t ack;
     mavlink_msg_command_ack_decode(&msg, &ack);
 
-    if(ack.command == _last_cmd_req_id && _last_cmd_req_t_ms > 0) {
+    if(ack.command == _cmd_req_info.last_cmd_req_id && _cmd_req_info.last_cmd_req_t_ms > 0) {
       _cmd_req_info.ack_status = (ack.result == 1 ? PLANCK_ACK : PLANCK_NACK);
     }
 }
 
-//Returns true if the last command req was actively NACKd or timed out
-bool AC_Planck::was_last_request_rejected() {
-  if(_cmd_req_info.ack_status == PLANCK_WAITING_FOR_ACK && ((AP_HAL::millis() - _cmd_req_info.last_cmd_req_t_ms) > ACK_WAIT_TIME_MS)) {
+//Returns ID of the last cmd request if the last command req was actively NACKd or timed out, otherwise returns -1
+int AC_Planck::was_last_request_rejected() {
+  if (_cmd_req_info.ack_status == PLANCK_WAITING_FOR_ACK && ((AP_HAL::millis() - _cmd_req_info.last_cmd_req_t_ms) > ACK_WAIT_TIME_MS)) {
     _set_ack_status(PLANCK_NACK);
   }
-  return (_cmd_req_info.ack_status == PLANCK_NACK);
+  if (_cmd_req_info.ack_status == PLANCK_NACK) {
+    return _cmd_req_info.last_cmd_req_id;
+  }
+  return -1;
+}
+
+//Returns ID of the last cmd request if the last command req was accepted, otherwise returns -1
+int AC_Planck::was_last_request_accepted() {
+  if (_cmd_req_info.ack_status == PLANCK_ACK) {
+    return _cmd_req_info.last_cmd_req_id;
+  }
+  return -1;
 }
 
 //If waiting for an ack, it returns the the last cmd req set, otherwise returns -1
 int AC_Planck::waiting_for_ack() {
-  if(_cmd_req_info.ack_status == PLANCK_WAITING_FOR_ACK){
+  if (_cmd_req_info.ack_status == PLANCK_WAITING_FOR_ACK) {
     if((AP_HAL::millis() - _cmd_req_info.last_cmd_req_t_ms) <= ACK_WAIT_TIME_MS) {
         return _cmd_req_info.last_cmd_req_id;
     }

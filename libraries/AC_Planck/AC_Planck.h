@@ -73,8 +73,11 @@ public:
 
   uint32_t mux_rates(float rate_up,  float rate_down);
 
-  //Returns true if the last command req was actively NACKd or timed out
-  bool was_last_request_rejected();
+  //Returns ID of the last cmd request if the last command req was actively NACKd or timed out, otherwise returns -1
+  int was_last_request_rejected();
+
+  //Returns ID of the last cmd request if the last command req was accepted, otherwise returns -1
+  int was_last_request_accepted();
 
   //If waiting for an ack, it returns the the last cmd req set, otherwise returns -1
   int waiting_for_ack();
@@ -107,6 +110,7 @@ private:
     bool tracking_commbox_gps = false;
     bool takeoff_complete = false;
     bool at_location = false;
+    uint32_t timestamp_ms = 0;
   }_status;
 
   enum planck_ack_status
