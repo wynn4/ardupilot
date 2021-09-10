@@ -115,6 +115,7 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
 
         //This is a new command
         _cmd.is_new = true;
+        _cmd.timestamp_ms = AP_HAL::millis();
         break;
     }
 
@@ -333,3 +334,10 @@ uint32_t AC_Planck::mux_rates(float rate_up,  float rate_down)
   muxed_rates = (muxed_rates & 0x7FFF7FFF) | 0x00008000;
   return muxed_rates;
 };
+
+void AC_Planck::reset_cmd_req_info()
+{
+  _cmd_req_info.last_cmd_req_t_ms = 0;
+  _cmd_req_info.ack_status = NOT_WAITING;
+  _cmd_req_info.last_cmd_req_id = -1;
+}

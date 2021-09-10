@@ -86,6 +86,10 @@ public:
 
   uint32_t get_last_cmd_req_t_ms() { return _cmd_req_info.last_cmd_req_t_ms; };
 
+  void reset_cmd_req_info();
+
+  uint32_t get_cmd_timestamp() {return _cmd.timestamp_ms;};
+
 private:
 
   struct
