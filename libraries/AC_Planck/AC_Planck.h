@@ -143,6 +143,7 @@ private:
     float high_tension_alt_cm = 0;
     bool sent_failed_message = false;
     bool comms_timed_out = false;
+    bool bv_timed_out = false;
   }_tether_status;
 
   float _hover_throttle_before_high_tension = 0.5;

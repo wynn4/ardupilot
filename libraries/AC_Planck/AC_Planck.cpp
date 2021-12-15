@@ -154,6 +154,7 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
       bool high_tension =  (ts.SPOOL_STATUS == PLANCK_DECK_SPOOL_LOCKED) && (ts.CABLE_TENSION > 75);
       bool entered_high_tension = high_tension && !_tether_status.high_tension;
       bool exited_high_tension = !high_tension && _tether_status.high_tension;
+      bool bv_unresponsive = ts.SYSTEM_STATUS == 5; //TODO Make the SYSTEM_STATUS values an enum in mavlink
 
       //If we've transitioned into high tension, record altitude and timestamps
       if(entered_high_tension) {
@@ -185,10 +186,19 @@ void AC_Planck::handle_planck_mavlink_msg(const mavlink_channel_t &chan, const m
 
       _tether_status.high_tension = high_tension;
 
-      AP::logger().Write("PDTS", "TimeUS,TSct,TSss,tsHT,tsCO", "QBBBf",
+      if(bv_unresponsive) {
+        gcs().send_text(MAV_SEVERITY_WARNING, "Tether Spool Controller Not Responding");
+      }else if (_tether_status.bv_timed_out) {
+        gcs().send_text(MAV_SEVERITY_INFO, "Tether Spool Controller OK");
+      }
+
+      _tether_status.bv_timed_out = bv_unresponsive;
+
+      AP::logger().Write("PDTS", "TimeUS,TSct,TSss, TSsyss, tsHT,tsCO", "QBBBBf",
                          AP_HAL::micros64(),
                          (uint8_t)ts.CABLE_TENSION,
                          (uint8_t)ts.SPOOL_STATUS,
+                         (uint8_t)ts.SYSTEM_STATUS,
                          (uint8_t)_tether_status.high_tension,
                          (float)_tether_status.cable_out_m);
       break;
