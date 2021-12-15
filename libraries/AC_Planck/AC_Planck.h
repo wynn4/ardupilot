@@ -90,6 +90,9 @@ public:
   //Override any commands from ACE with zero-attitude commands
   void override_with_zero_att_cmd();
 
+  //Return the current spool status of the BV
+  uint8_t get_spool_status() { return _tether_status.spool_status; };
+
 private:
 
   struct
@@ -143,6 +146,7 @@ private:
     float high_tension_alt_cm = 0;
     bool sent_failed_message = false;
     bool comms_timed_out = false;
+    uint8_t spool_status = PLANCK_DECK_SPOOL_LOCKED;
   }_tether_status;
 
   float _hover_throttle_before_high_tension = 0.5;
