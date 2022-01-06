@@ -214,6 +214,22 @@ bool AP_Notify::set_led(uint8_t device_address, bool on) {
   return success;
 }
 
+bool AP_Notify::read_mot_temp(uint8_t device_address, float &temp_deg_C) {
+  AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev =  std::move(hal.i2c_mgr->get_device(0, device_address,100000, true, 20));
+
+  bool success = false;
+  if(!dev->get_semaphore()->take(10)) {
+    gcs().send_text(MAV_SEVERITY_CRITICAL, "Unable to read temp %i\n", device_address);
+  } else {
+    success = dev->read_registers(0x02,temp_deg_C,1);
+    temp_deg_C = temp_deg_C/1.8-20; //convert to deg C
+
+    dev->get_semaphore()->give();
+  }
+
+  return success;
+}
+
 // add notify backends to _devices array
 void AP_Notify::add_backends(void)
 {
