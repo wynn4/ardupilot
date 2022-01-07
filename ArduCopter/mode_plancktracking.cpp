@@ -89,7 +89,7 @@ void ModePlanckTracking::run() {
           else if(copter.flightmode->auto_yaw.mode() == AUTO_YAW_RATE)
           {
             copter.flightmode->auto_yaw.set_fixed_yaw(
-                  copter.flightmode->auto_yaw.rate_cds(),
+                  copter.flightmode->auto_yaw.rate_cds()/100.f,
                   0.0f,
                   0,
                   0);
