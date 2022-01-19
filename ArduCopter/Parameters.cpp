@@ -589,6 +589,10 @@ const AP_Param::Info Copter::var_info[] = {
     // @Path: ../libraries/AP_BattMonitor/AP_BattMonitor.cpp
     GOBJECT(battery,                "BATT",         AP_BattMonitor),
 
+    // @Group: MOTT
+    // @Path: ../libraries/AP_MotorTempMonitor/AP_MotorTempMonitor.cpp
+    GOBJECT(motor_temp_mon,                "MOTT",         AP_MotorTempMonitor),
+
     // @Group: BRD_
     // @Path: ../libraries/AP_BoardConfig/AP_BoardConfig.cpp
     GOBJECT(BoardConfig,            "BRD_",       AP_BoardConfig),

@@ -34,6 +34,7 @@ public:
         ARMING_CHECK_MISSION     = (1U << 14),
         ARMING_CHECK_RANGEFINDER = (1U << 15),
         ARMING_CHECK_PLANCK_GPS  = (1U << 16),
+        ARMING_CHECK_MOTOR_TEMP  = (1UL << 17),
     };
 
     enum class Method {
@@ -110,6 +111,8 @@ protected:
     virtual bool gps_checks(bool report);
 
     bool battery_checks(bool report);
+
+    bool motor_temp_checks(bool report);
 
     bool hardware_safety_check(bool report);
 

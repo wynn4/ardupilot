@@ -1,38 +1,34 @@
+#include <AP_HAL/AP_HAL.h>
+#include <AP_Common/AP_Common.h>
+#include <AP_Math/AP_Math.h>
+#include "AP_MotorTempMonitor.h"
 #include "AP_MotorTempMonitor_I2CBus_INDAGO.h"
+#include <utility>
 
-AP_MotorTempMonitor_I2CBus_INDAGO::AP_MotorTempMonitor_I2CBus_INDAGO()
+AP_MotorTempMonitor_I2CBus_INDAGO::AP_MotorTempMonitor_I2CBus_INDAGO(AP_MotorTempMonitor &mon,
+                                                                     AP_MotorTempMonitor::MotorTempMonitor_State &mon_state,
+                                                                     AP_MotorTempMonitor_Params &params,
+                                                                     AP_HAL::OwnPtr<AP_HAL::I2CDevice> dev) : AP_MotorTempMonitor_I2CBus(mon, mon_state, params, std::move(dev))
 {
+  _has_cell_voltages = false;
+}
+
+void AP_MotorTempMonitor_I2CBus_INDAGO::timer()
+{
+
+    read_temp();
 
 }
 
-void AP_MotorTempMonitor_I2CBus_INDAGO::init(void) {
-    if (_dev) {
-        _dev->register_periodic_callback(100000, FUNCTOR_BIND_MEMBER(&AP_MotorTempMonitor_I2CBus_INDAGO::timer, void));
-    }
-}
-
-bool AP_MotorTempMonitor_I2CBus_INDAGO::read_word(uint8_t reg, uint16_t& data) const
+bool AP_MotorTempMonitor_I2CBus_INDAGO::read_temp(void)
 {
-    // buffer to hold results (1 extra byte returned holding PEC)
-    const uint8_t read_size = 2 + (_pec_supported ? 1 : 0);
-    uint8_t buff[read_size];    // buffer to hold results
+    uint8_t buf;
 
-    // read the appropriate register from the device
-    if (!_dev->read_registers(reg, buff, sizeof(buff))) {
-        return false;
+    if(!_dev->read_registers(0x2, &buf, sizeof(buf))) {
+      return false;
     }
 
-    // check PEC
-    if (_pec_supported) {
-        const uint8_t pec = get_PEC(AP_BATTMONITOR_SMBUS_I2C_ADDR, reg, true, buff, 2);
-        if (pec != buff[2]) {
-            return false;
-        }
-    }
-
-    // convert buffer to word
-    data = (uint16_t)buff[1]<<8 | (uint16_t)buff[0];
-
-    // return success
-    return true;
+        _state.temperature_time = AP_HAL::millis();
+        _state.temp_c = (float)(buf)/_params._deg_c_divisor +_params._deg_c_offset;
+        return true;
 }

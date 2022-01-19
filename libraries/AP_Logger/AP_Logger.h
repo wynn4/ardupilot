@@ -129,6 +129,7 @@ enum class LogErrorSubsystem : uint8_t {
     PILOT_INPUT = 28,
     FAILSAFE_VIBE = 29,
     FAILSAFE_TETHER = 30,
+    FAILSAFE_MOT_TEMP = 31,
 };
 
 // bizarrely this enumeration has lots of duplicate values, offering
@@ -261,6 +262,7 @@ public:
     void Write_Attitude(const Vector3f &targets);
     void Write_AttitudeView(AP_AHRS_View &ahrs, const Vector3f &targets);
     void Write_Current();
+    void Write_MotorTemp();
     void Write_Compass(uint64_t time_us=0);
     void Write_Mode(uint8_t mode, const ModeReason reason);
 
@@ -448,7 +450,9 @@ private:
     void Write_IMUDT_instance(uint64_t time_us,
                                   uint8_t imu_instance,
                                   enum LogMessages type);
-
+    void Write_MotorTemp_instance(uint64_t time_us,
+                                    uint8_t motor_instance,
+                                    enum LogMessages type);
     void backend_starting_new_log(const AP_Logger_Backend *backend);
 
     static AP_Logger *_singleton;

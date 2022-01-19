@@ -3,6 +3,7 @@
 #include <AP_AHRS/AP_AHRS.h>
 #include <AP_Baro/AP_Baro.h>
 #include <AP_BattMonitor/AP_BattMonitor.h>
+#include <AP_MotorTempMonitor/AP_MotorTempMonitor.h>
 #include <AP_Compass/AP_Compass.h>
 #include <AP_HAL/AP_HAL.h>
 #include <AP_Math/AP_Math.h>
@@ -711,6 +712,34 @@ void AP_Logger::Write_Current()
                                    i,
                                    (LogMessages)((uint8_t)LOG_CURRENT_MSG + i),
                                    (LogMessages)((uint8_t)LOG_CURRENT_CELLS_MSG + i));
+    }
+}
+
+void AP_Logger::Write_MotorTemp_instance(const uint64_t time_us,
+                                                 const uint8_t motor_instance,
+                                                 const enum LogMessages type)
+{
+    AP_MotorTempMonitor &motor = AP::motor_temp_mon();
+    float temp;
+    bool has_temp = motor.get_temperature(temp, motor_instance);
+
+    const struct log_Motor_Temp pkt = {
+        LOG_PACKET_HEADER_INIT(type),
+        time_us             : time_us,
+        temperature         : (float)(has_temp ? (temp ) : 0)
+    };
+    WriteBlock(&pkt, sizeof(pkt));
+}
+
+// Write an Current data packet
+void AP_Logger::Write_MotorTemp()
+{
+    const uint64_t time_us = AP_HAL::micros64();
+    const uint8_t num_instances = AP::motor_temp_mon().num_instances();
+    for (uint8_t i = 0; i < num_instances; i++) {
+        Write_MotorTemp_instance(time_us,
+                                   i,
+                                   (LogMessages)((uint8_t)LOG_MOT_TEMP1_MSG + i));
     }
 }
 

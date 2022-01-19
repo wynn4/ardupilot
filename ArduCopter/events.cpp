@@ -111,6 +111,32 @@ void Copter::handle_battery_failsafe(const char *type_str, const int8_t action)
 
 }
 
+
+void Copter::handle_motor_temp_failsafe(const char *type_str, const int8_t action)
+{
+    AP::logger().Write_Error(LogErrorSubsystem::FAILSAFE_MOT_TEMP, LogErrorCode::FAILSAFE_OCCURRED);
+
+    Failsafe_Action desired_action = (Failsafe_Action)action;
+
+    // Conditions to deviate from BATT_FS_XXX_ACT parameter setting
+    if (should_disarm_on_failsafe()) {
+        // should immediately disarm when we're on the ground
+        arming.disarm();
+        desired_action = Failsafe_Action_None;
+        gcs().send_text(MAV_SEVERITY_WARNING, "Motor Temperature Failsafe - Disarming");
+
+    } else if (flightmode->is_landing() && failsafe_option(FailsafeOption::CONTINUE_IF_LANDING) && desired_action != Failsafe_Action_None) {
+        // Allow landing to continue when FS_OPTIONS is set to continue when landing
+        desired_action = Failsafe_Action_Land;
+        gcs().send_text(MAV_SEVERITY_WARNING, "Motor Temperature Failsafe - Continuing Landing");
+    } else {
+        gcs().send_text(MAV_SEVERITY_WARNING, "Motor Temperature Failsafe");
+    }
+
+    // Motor temp FS options already use the Failsafe_Options enum. So use them directly.
+    do_failsafe_action(desired_action, ModeReason::MOT_TEMP_FAILSAFE);
+}
+
 // failsafe_gcs_check - check for ground station failsafe
 void Copter::failsafe_gcs_check()
 {

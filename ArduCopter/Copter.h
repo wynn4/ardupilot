@@ -68,6 +68,7 @@
 #include <AC_AutoTune/AC_AutoTune.h>
 #include <AP_Common/AP_FWVersion.h>
 #include <AC_Planck/AC_Planck.h>
+#include <AP_MotorTempMonitor/AP_MotorTempMonitor.h>     // Battery monitor library
 
 // Configuration
 #include "defines.h"
@@ -427,7 +428,7 @@ private:
     } failsafe;
 
     bool any_failsafe_triggered() const {
-        return failsafe.radio || battery.has_failsafed() || failsafe.gcs || failsafe.ekf || failsafe.terrain || failsafe.adsb || failsafe.tether;
+        return failsafe.radio || battery.has_failsafed() || failsafe.gcs || failsafe.ekf || failsafe.terrain || failsafe.adsb || failsafe.tether || motor_temp_mon.has_failsafed();
     }
 
     // sensor health for logging
@@ -459,6 +460,11 @@ private:
     // Battery Sensors
     AP_BattMonitor battery{MASK_LOG_CURRENT,
                            FUNCTOR_BIND_MEMBER(&Copter::handle_battery_failsafe, void, const char*, const int8_t),
+                           _failsafe_priorities};
+
+    // Motor temp monitor
+    AP_MotorTempMonitor motor_temp_mon{MASK_LOG_MOT_TEMP,
+                           FUNCTOR_BIND_MEMBER(&Copter::handle_motor_temp_failsafe, void, const char*, const int8_t),
                            _failsafe_priorities};
 
 #if OSD_ENABLED == ENABLED
@@ -741,6 +747,7 @@ private:
     void failsafe_radio_on_event();
     void failsafe_radio_off_event();
     void handle_battery_failsafe(const char* type_str, const int8_t action);
+    void handle_motor_temp_failsafe(const char* type_str, const int8_t action);
     void failsafe_gcs_check();
     void failsafe_gcs_on_event(void);
     void failsafe_gcs_off_event(void);

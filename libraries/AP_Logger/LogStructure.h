@@ -767,6 +767,12 @@ struct PACKED log_Current {
     float    resistance;
 };
 
+struct PACKED log_Motor_Temp {
+    LOG_PACKET_HEADER;
+    uint64_t time_us;
+    float temperature;
+};
+
 struct PACKED log_WheelEncoder {
     LOG_PACKET_HEADER;
     uint64_t time_us;
@@ -1419,7 +1425,15 @@ struct PACKED log_Arm_Disarm {
     { LOG_OA_BENDYRULER_MSG, sizeof(log_OABendyRuler), \
       "OABR","QBHHfLLLL","TimeUS,Active,DesYaw,Yaw,Mar,DLat,DLng,OALat,OALng", "sbddmDUDU", "F----GGGG" }, \
     { LOG_OA_DIJKSTRA_MSG, sizeof(log_OADijkstra), \
-      "OADJ","QBBBBLLLL","TimeUS,State,Err,CurrPoint,TotPoints,DLat,DLng,OALat,OALng", "sbbbbDUDU", "F----GGGG" }
+      "OADJ","QBBBBLLLL","TimeUS,State,Err,CurrPoint,TotPoints,DLat,DLng,OALat,OALng", "sbbbbDUDU", "F----GGGG" },\
+    { LOG_MOT_TEMP1_MSG, sizeof(log_Motor_Temp), \
+      "MT1", "Qf","TimeUS,MotorTemp", "so", "F0" }, \
+    { LOG_MOT_TEMP2_MSG, sizeof(log_Motor_Temp), \
+      "MT2", "Qf","TimeUS,MotorTemp", "so", "F0" }, \
+    { LOG_MOT_TEMP3_MSG, sizeof(log_Motor_Temp), \
+      "MT3", "Qf","TimeUS,MotorTemp", "so", "F0" }, \
+    { LOG_MOT_TEMP4_MSG, sizeof(log_Motor_Temp), \
+      "MT4", "Qf","TimeUS,MotorTemp", "so", "F0" }
 
 // messages for more advanced boards
 #define LOG_EXTRA_STRUCTURES \
@@ -1670,7 +1684,10 @@ enum LogMessages : uint8_t {
     LOG_XKFD_MSG,
     LOG_XKV1_MSG,
     LOG_XKV2_MSG,
-
+    LOG_MOT_TEMP1_MSG,
+    LOG_MOT_TEMP2_MSG,
+    LOG_MOT_TEMP3_MSG,
+    LOG_MOT_TEMP4_MSG,
     LOG_FORMAT_MSG = 128, // this must remain #128
 
     LOG_PARAMETER_MSG,

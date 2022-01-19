@@ -33,6 +33,7 @@
 #include <AP_RangeFinder/AP_RangeFinder.h>
 #include <AP_Terrain/AP_Terrain.h>
 #include <AP_Scripting/AP_Scripting.h>
+#include <AP_MotorTempMonitor/AP_MotorTempMonitor.h>
 
 #if HAL_WITH_UAVCAN
   #include <AP_BoardConfig/AP_BoardConfig_CAN.h>
@@ -498,6 +499,20 @@ bool AP_Arming::battery_checks(bool report)
     return true;
 }
 
+bool AP_Arming::motor_temp_checks(bool report)
+{
+    if ((checks_to_perform & ARMING_CHECK_ALL) ||
+        (checks_to_perform & ARMING_CHECK_MOTOR_TEMP)) {
+
+        char buffer[MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN+1] {};
+        if (!AP::motor_temp_mon().arming_checks(sizeof(buffer), buffer)) {
+            check_failed(ARMING_CHECK_MOTOR_TEMP, report, "%s", buffer);
+            return false;
+        }
+     }
+    return true;
+}
+
 bool AP_Arming::hardware_safety_check(bool report) 
 {
     if ((checks_to_perform & ARMING_CHECK_ALL) ||
@@ -831,7 +846,8 @@ bool AP_Arming::pre_arm_checks(bool report)
         &  board_voltage_checks(report)
         &  system_checks(report)
         &  can_checks(report)
-        &  proximity_checks(report);
+        &  proximity_checks(report)
+        &  motor_temp_checks(report);
 }
 
 bool AP_Arming::arm_checks(AP_Arming::Method method)

@@ -6,6 +6,11 @@
 #include "AP_MotorTempMonitor_I2CBus.h"
 #include <AP_HAL/I2CDevice.h>
 
+#define AP_MOTORTEMPMONITOR_I2C_BUS_INTERNAL           0
+#define AP_MOTORTEMPMONITOR_SMBUS_BUS_EXTERNAL           1
+#define AP_MOTORTEMPMONITOR_I2C_ADDR               0x51
+#define AP_MOTORTEMPMONITOR_I2C_TIMEOUT_MICROS         5000000 // sensor becomes unhealthy if no successful readings for 5 seconds
+
 class AP_MotorTempMonitor_I2CBus_INDAGO : public AP_MotorTempMonitor_I2CBus
 {
 public:
@@ -19,9 +24,7 @@ public:
 private:
 
     void timer(void) override;
+    bool read_temp(void);
 
-    // read_block - returns number of characters read if successful, zero if unsuccessful
-    uint8_t read_block(uint8_t reg, uint8_t* data, uint8_t max_len, bool append_zero) const;
 
-    uint8_t _button_press_count;
 };
