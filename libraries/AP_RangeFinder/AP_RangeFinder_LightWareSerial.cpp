@@ -61,6 +61,9 @@ bool AP_RangeFinder_LightWareSerial::get_reading(uint16_t &reading_cm)
     uint16_t valid_count = 0;   // number of valid readings
     uint16_t invalid_count = 0; // number of invalid readings
 
+    // max distance the sensor can reliably measure - read from parameters
+    const int16_t distance_cm_max = max_distance_cm();
+
     // read any available lines from the lidar
     int16_t nbytes = uart->available();
     while (nbytes-- > 0) {
@@ -68,7 +71,7 @@ bool AP_RangeFinder_LightWareSerial::get_reading(uint16_t &reading_cm)
         if (c == '\r') {
             linebuf[linebuf_len] = 0;
             const float dist = (float)atof(linebuf);
-            if (!is_negative(dist)) {
+            if (!is_negative(dist) && !is_lost_signal_distance(dist * 100, distance_cm_max)) {
                 sum += dist;
                 valid_count++;
             } else {
@@ -105,7 +108,7 @@ bool AP_RangeFinder_LightWareSerial::get_reading(uint16_t &reading_cm)
 
     // all readings were invalid so return out-of-range-high value
     if (invalid_count > 0) {
-        reading_cm = MIN(MAX(LIGHTWARE_DIST_MAX_CM, max_distance_cm() + LIGHTWARE_OUT_OF_RANGE_ADD_CM), UINT16_MAX);
+        reading_cm = MIN(MAX(LIGHTWARE_DIST_MAX_CM, distance_cm_max + LIGHTWARE_OUT_OF_RANGE_ADD_CM), UINT16_MAX);
         return true;
     }
 
@@ -125,4 +128,20 @@ void AP_RangeFinder_LightWareSerial::update(void)
     } else if (AP_HAL::millis() - state.last_reading_ms > 200) {
         set_status(RangeFinder::RangeFinder_NoData);
     }
+}
+
+// check to see if distance returned by the LiDAR is a known lost-signal distance flag
+bool AP_RangeFinder_LightWareSerial::is_lost_signal_distance(int16_t distance_cm, int16_t distance_cm_max)
+{
+    if (distance_cm < distance_cm_max + LIGHTWARE_OUT_OF_RANGE_ADD_CM) {
+        // in-range
+        return false;
+    }
+    const int16_t bad_distances[] { 13000, 16000, 23000, 25000 };
+    for (const auto bad_distance_cm : bad_distances) {
+        if (distance_cm == bad_distance_cm) {
+            return true;
+        }
+    }
+    return false;
 }

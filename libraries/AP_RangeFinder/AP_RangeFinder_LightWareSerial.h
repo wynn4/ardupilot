@@ -27,6 +27,7 @@ protected:
 private:
     // get a reading
     bool get_reading(uint16_t &reading_cm);
+    bool is_lost_signal_distance(int16_t distance_cm, int16_t distance_cm_max);
 
     AP_HAL::UARTDriver *uart = nullptr;
     char linebuf[10];
